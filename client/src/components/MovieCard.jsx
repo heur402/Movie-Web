@@ -1,12 +1,23 @@
 import React, { useState } from "react";
 import { Heart, Play } from "lucide-react";
-import Watch from "./Watch";
+import { useNavigate } from "react-router-dom";
 
 const MovieCard = ({ movie }) => {
   const [liked, setLiked] = useState(false);
+  const navigate = useNavigate();
+
+  const handlePlay = () => {
+    navigate(`/movie/${movie.id}`);
+  };
 
   return (
-    <div className="bg-gray-900 text-white rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 hover:bg-shadow">
+    <div
+      className="
+        bg-gray-900 text-white rounded-2xl overflow-hidden 
+        shadow-lg transition-all duration-300 transform hover:scale-105
+        hover:shadow-red-600
+      "
+    >
       {/* Poster Section */}
       <div className="relative">
         <img
@@ -18,7 +29,7 @@ const MovieCard = ({ movie }) => {
         {/* Like Button */}
         <button
           onClick={() => setLiked(!liked)}
-          className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 p-2 rounded-full"
+          className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 p-2 rounded-full transition"
         >
           <Heart
             size={20}
@@ -27,9 +38,12 @@ const MovieCard = ({ movie }) => {
         </button>
 
         {/* Play Button Overlay */}
-        <button className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition bg-black/50">
-          <div className="bg-red-600 p-3 rounded-full">
-            <Play size={24} />
+        <button
+          onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition bg-black/50"
+        >
+          <div className="bg-gradient-to-r from-red-600 to-red-950 p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
+            <Play size={24} className="text-white" />
           </div>
         </button>
       </div>
@@ -45,9 +59,6 @@ const MovieCard = ({ movie }) => {
           </span>
           <span className="text-gray-400">{movie.releaseDate}</span>
         </div>
-
-        {/* Watch Trailer Button */}
-        <Watch />
       </div>
     </div>
   );

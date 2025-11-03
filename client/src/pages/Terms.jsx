@@ -135,7 +135,7 @@ const Terms = () => {
                     byiringiro@gmail.com
                   </a>
                 </p>
-                <p>📞 Phone: +250 788 821 628</p>
+                <p>📞 Phone: +250 796 577 776</p>
               </div>
             </section>
           </div>
