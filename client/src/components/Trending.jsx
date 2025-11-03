@@ -35,7 +35,7 @@ const Trending = () => {
         className="relative flex flex-col lg:flex-row items-center justify-between p-10 bg-cover bg-center bg-no-repeat"
       >
         {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/90"></div>
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/50 to-black/90"></div>
 
         {/* Content */}
         <div className="relative z-10 lg:w-1/2 space-y-6">

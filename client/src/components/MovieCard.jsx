@@ -42,7 +42,7 @@ const MovieCard = ({ movie }) => {
           onClick={handlePlay}
           className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition bg-black/50"
         >
-          <div className="bg-gradient-to-r from-red-600 to-red-950 p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
+          <div className="bg-linear-to-r from-red-600 to-red-950 p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
             <Play size={24} className="text-white" />
           </div>
         </button>
