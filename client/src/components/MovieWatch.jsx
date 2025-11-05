@@ -1,27 +1,69 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { movies, trendingMovies } from "../assets/assets";
 
 const MovieWatch = () => {
   const { id } = useParams();
-  const allMovies = [...movies, ...trendingMovies];
-  const movie = allMovies.find((m) => m.id.toString() === id);
-
+  const [movie, setMovie] = useState(null);
+  const [relatedMovies, setRelatedMovies] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [username, setUsername] = useState("");
-
-  // ⭐ Movie Rating State
   const [ratings, setRatings] = useState([]);
   const [userRating, setUserRating] = useState(0);
+  const [isTrending, setIsTrending] = useState(false);
 
-  // 🧑‍💼 Admin flag (later you can make this dynamic)
-  const isAdmin = false; // change to true to simulate admin view
+  const isAdmin = false; // simulate admin
+
+  // Fetch movie and related movies
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        // Fetch all movies from both endpoints
+        const [moviesRes, trendingRes] = await Promise.all([
+          fetch("http://localhost:5000/api/movies"),
+          fetch("http://localhost:5000/api/trending")
+        ]);
+        
+        const moviesData = await moviesRes.json();
+        const trendingData = await trendingRes.json();
+        
+        // Combine both arrays
+        const allMovies = [...moviesData, ...trendingData];
+        
+        // Find current movie from combined array
+        const current = allMovies.find((m) => m._id === id);
+        if (current) {
+          setMovie(current);
+
+          // Check if it's a trending movie
+          const isTrendingMovie = trendingData.some(m => m._id === id);
+          setIsTrending(isTrendingMovie);
+
+          // Related movies by genre, exclude current movie
+          const related = allMovies
+            .filter((m) => m.genre === current.genre && m._id !== current._id)
+            .slice(0, 10);
+          setRelatedMovies(related);
+
+          // Initialize ratings
+          setRatings(current.ratings || []);
+
+          setComments(current.comments || []);
+        } else {
+          setMovie(null);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchMovie();
+  }, [id]);
 
   if (!movie) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
-        <h2 className="text-3xl font-bold mb-4">Movie not found 🎬</h2>
+        <h2 className="text-3xl font-bold mb-4">Movie not found</h2>
         <Link
           to="/"
           className="px-6 py-3 bg-red-500 rounded-lg hover:bg-red-600 transition"
@@ -32,28 +74,68 @@ const MovieWatch = () => {
     );
   }
 
-  const relatedMovies = allMovies.filter(
-    (m) => m.id !== movie.id && m.genre === movie.genre
-  );
-
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
-    if (newComment.trim() === "" || username.trim() === "") return;
+    if (!newComment.trim() || !username.trim()) return;
 
-    setComments([{ name: username, text: newComment, date: new Date() }, ...comments]);
-    setNewComment("");
-    setUsername("");
+    try {
+      // Use different endpoint based on whether it's a trending movie
+      const endpoint = isTrending 
+        ? `http://localhost:5000/api/trending/${id}/comments`
+        : `http://localhost:5000/api/movies/${id}/comments`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: username, text: newComment }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add comment");
+
+      const newCommentObj = await res.json();
+
+      setComments([newCommentObj, ...comments]);
+      setNewComment("");
+      setUsername("");
+    } catch (err) {
+      console.error(err);
+      alert("Error adding comment");
+    }
   };
 
-  const handleRating = (value) => {
+  const handleRating = async (value) => {
     setUserRating(value);
     setRatings([...ratings, value]);
+    
+    try {
+      // Use different endpoint based on whether it's a trending movie
+      const endpoint = isTrending 
+        ? `http://localhost:5000/api/trending/${id}/rate`
+        : `http://localhost:5000/api/movies/${id}/rate`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: value }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add rating");
+
+      const updatedMovie = await res.json();
+      setRatings(updatedMovie.ratings.map(r => r.score));
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting rating");
+    }
   };
 
-  const averageRating =
-    ratings.length > 0
-      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
-      : movie.rating || 0;
+  const averageRating = movie.avgRating || (
+    ratings && ratings.length > 0
+      ? (
+          ratings.reduce((sum, r) => sum + (r.score || r), 0) / ratings.length
+        ).toFixed(1)
+      : 0
+  );
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -86,9 +168,12 @@ const MovieWatch = () => {
                 ★
               </button>
             ))}
-            <span className="text-gray-300 ml-2">
-              {`${averageRating}`}
+
+            {/* ✅ Display average rating on the right of the stars */}
+            <span className="text-yellow-400 font-semibold ml-2">
+              {averageRating}
             </span>
+
             {isAdmin && (
               <span className="text-gray-500 text-sm ml-2">
                 ({ratings.length} users rated)
@@ -136,7 +221,16 @@ const MovieWatch = () => {
                   <div key={index} className="bg-gray-900/70 p-3 rounded-lg border border-gray-800">
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-red-400 font-semibold text-sm">{c.name}</p>
-                      <p className="text-gray-500 text-xs">{c.date.toLocaleString()}</p>
+                      <p className="text-gray-500 text-xs">
+                        {new Date(c.date).toLocaleString("en-GB", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </p>
                     </div>
                     <p className="text-gray-300">{c.text}</p>
                   </div>
@@ -152,14 +246,14 @@ const MovieWatch = () => {
             Related Movies
           </h2>
 
-          {relatedMovies.slice(0, 9).map((rel) => (
+          {relatedMovies.map((rel) => (
             <Link
-              key={rel.id}
-              to={`/movie/${rel.id}`}
+              key={rel._id}
+              to={`/movie/${rel._id}`}
               className="flex gap-3 items-center bg-gray-800/60 hover:bg-gray-800 rounded-xl p-3 transition"
             >
               <img
-                src={rel.image || rel.poster}
+                src={rel.image}
                 alt={rel.title}
                 className="w-16 h-20 object-cover rounded-lg shadow-md"
               />

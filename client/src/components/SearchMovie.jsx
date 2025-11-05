@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { movies } from "../assets/assets";
 import { Search } from "lucide-react";
 
 const SearchMovie = () => {
@@ -25,24 +24,69 @@ const SearchMovie = () => {
     };
   }, []);
 
-  // Handle search when query changes
+  // Fetch movies from both endpoints when query changes
   useEffect(() => {
-    if (query.trim() === "") {
-      setSearchResults([]);
-      setShowResults(false);
-      return;
-    }
+    const fetchMovies = async () => {
+      if (query.trim() === "") {
+        setSearchResults([]);
+        setShowResults(false);
+        return;
+      }
 
-    const results = movies.filter((movie) =>
-      movie.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(results);
-    setShowResults(true);
+      try {
+        // Fetch from both movies and trending endpoints
+        const [moviesRes, trendingRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/movies/search?q=${query}`),
+          fetch(`http://localhost:5000/api/trending`)
+        ]);
+
+        const moviesData = await moviesRes.json();
+        const trendingData = await trendingRes.json();
+
+        // Filter trending movies by search query
+        const filteredTrending = trendingData.filter(movie =>
+          movie.title.toLowerCase().includes(query.toLowerCase())
+        );
+
+        // Combine both arrays
+        const allResults = [...moviesData, ...filteredTrending];
+
+        // Remove duplicates based on movie ID
+        const uniqueResults = allResults.filter((movie, index, self) =>
+          index === self.findIndex(m => m._id === movie._id)
+        );
+
+        // Compute avg rating client-side if not provided
+        const withAvg = uniqueResults.map((movie) => {
+          const ratings = movie.ratings || [];
+          const avg =
+            ratings.length > 0
+              ? (
+                  ratings.reduce((sum, r) => sum + (r.score || r), 0) /
+                  ratings.length
+                ).toFixed(1)
+              : 0;
+          return { ...movie, avgRating: avg };
+        });
+
+        setSearchResults(withAvg);
+        setShowResults(true);
+      } catch (err) {
+        console.error("Search error:", err);
+        setSearchResults([]);
+      }
+    };
+
+    const delayDebounce = setTimeout(() => {
+      fetchMovies();
+    }, 300); // debounce for 300ms
+
+    return () => clearTimeout(delayDebounce);
   }, [query]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && query.trim() !== "") {
-      // You can add specific enter key behavior here if needed
+      // Optional: navigate to search results page
       console.log("Search for:", query);
     }
   };
@@ -61,16 +105,12 @@ const SearchMovie = () => {
 
   const handleFocus = () => {
     setIsFocused(true);
-    if (query) {
-      setShowResults(true);
-    }
+    if (query) setShowResults(true);
   };
 
   return (
     <div className="flex-1 flex justify-center items-center mx-4" ref={searchRef}>
-      {/* Search Container */}
       <div className="relative w-full max-w-lg">
-        {/* Search Input */}
         <div className={`relative transition-all duration-300 ${isFocused ? 'scale-105' : 'scale-100'}`}>
           <input
             type="text"
@@ -91,7 +131,7 @@ const SearchMovie = () => {
               <Search />
             </span>
           </div>
-          
+
           {/* Clear Button */}
           {query && (
             <button
@@ -102,13 +142,6 @@ const SearchMovie = () => {
               <span className="text-lg">✕</span>
             </button>
           )}
-
-          {/* Search Action Button */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <span className="text-gray-400 hover:text-red-400 cursor-pointer transition-colors duration-200 p-1 block">
-              
-            </span>
-          </div>
         </div>
 
         {/* Search Results Dropdown */}
@@ -117,23 +150,21 @@ const SearchMovie = () => {
                          shadow-2xl border border-gray-700/50 max-h-96 overflow-y-auto z-50 
                          animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="p-3">
-              {/* Results Count */}
               <div className="text-xs text-gray-400 px-3 py-2 border-b border-gray-700/50 flex items-center gap-2">
                 <span>🎬</span>
                 <span>Found {searchResults.length} movie{searchResults.length !== 1 ? 's' : ''}</span>
               </div>
               
-              {/* Results List */}
               {searchResults.map((movie) => (
                 <Link
-                  key={movie.id}
-                  to={`/movie/${movie.id}`}
+                  key={movie._id}
+                  to={`/movie/${movie._id}`}
                   onClick={handleResultClick}
                   className="flex items-center gap-4 p-3 hover:bg-gray-800/80 rounded-xl transition-all 
                            duration-200 group border border-transparent hover:border-gray-700/50"
                 >
                   <img 
-                    src={movie.poster} 
+                    src={movie.image} 
                     alt={movie.title}
                     className="w-12 h-16 object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-200"
                   />
@@ -145,7 +176,9 @@ const SearchMovie = () => {
                     <p className="text-gray-400 text-xs truncate mt-1">{movie.genre}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-yellow-400 text-xs">⭐</span>
-                      <span className="text-yellow-400 text-xs font-medium">{movie.rating}</span>
+                      <span className="text-yellow-400 text-xs font-medium">
+                        {movie.avgRating || 0}
+                      </span>
                       <span className="text-gray-500 text-xs">•</span>
                       <span className="text-gray-400 text-xs">{movie.year}</span>
                     </div>

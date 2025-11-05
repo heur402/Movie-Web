@@ -1,11 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import MovieCard from "../components/MovieCard";
-import { trendingMovies } from "../assets/assets";
-import { Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Trending = () => {
-  const [activeMovie, setActiveMovie] = useState(trendingMovies[0]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [activeMovie, setActiveMovie] = useState(null);
+  const navigate = useNavigate();
+
+  // Fetch trending movies from API
+  useEffect(() => {
+    const fetchTrendingMovies = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/trending");
+        const data = await res.json();
+        setTrendingMovies(data);
+        if (data.length > 0) {
+          setActiveMovie(data[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch trending movies:", err);
+      }
+    };
+
+    fetchTrendingMovies();
+  }, []);
 
   const handleMouseEnter = (movie) => {
     setActiveMovie(movie);
@@ -17,7 +36,9 @@ const Trending = () => {
   };
 
   const handlePlay = () => {
-    navigate(`/movie/${movie.id}`);
+    if (activeMovie) {
+      navigate(`/movie/${activeMovie._id}`);
+    }
   };
 
   return (
@@ -39,38 +60,44 @@ const Trending = () => {
 
         {/* Content */}
         <div className="relative z-10 lg:w-1/2 space-y-6">
-          <h2 className="text-4xl font-bold">{activeMovie.title}</h2>
-          <p className="text-gray-300 max-w-md">{activeMovie.description}</p>
+          <h2 className="text-4xl font-bold">{activeMovie?.title}</h2>
+          <p className="text-gray-300 max-w-md">{activeMovie?.description}</p>
         </div>
 
         {/* Right Side — Layered Movie Cards */}
-        <div className="">
+        <div className="relative z-10">
           {/* Left card */}
-          <div
-            className=""
-            onMouseEnter={() => handleMouseEnter(trendingMovies[1])}
-            onMouseLeave={handleMouseLeave}
-          >
-            <MovieCard movie={trendingMovies[1]} />
-          </div>
+          {trendingMovies[1] && (
+            <div
+              className=""
+              onMouseEnter={() => handleMouseEnter(trendingMovies[1])}
+              onMouseLeave={handleMouseLeave}
+            >
+              <MovieCard movie={trendingMovies[1]} />
+            </div>
+          )}
 
           {/* Main front card */}
-          <div
-            className=""
-            onMouseEnter={() => handleMouseEnter(trendingMovies[0])}
-            onMouseLeave={handleMouseLeave}
-          >
-            <MovieCard movie={trendingMovies[0]} />
-          </div>
+          {trendingMovies[0] && (
+            <div
+              className=""
+              onMouseEnter={() => handleMouseEnter(trendingMovies[0])}
+              onMouseLeave={handleMouseLeave}
+            >
+              <MovieCard movie={trendingMovies[0]} />
+            </div>
+          )}
 
           {/* Right card */}
-          <div
-            className=""
-            onMouseEnter={() => handleMouseEnter(trendingMovies[2])}
-            onMouseLeave={handleMouseLeave}
-          >
-            <MovieCard movie={trendingMovies[2]} />
-          </div>
+          {trendingMovies[2] && (
+            <div
+              className=""
+              onMouseEnter={() => handleMouseEnter(trendingMovies[2])}
+              onMouseLeave={handleMouseLeave}
+            >
+              <MovieCard movie={trendingMovies[2]} />
+            </div>
+          )}
         </div>
 
       </div>
