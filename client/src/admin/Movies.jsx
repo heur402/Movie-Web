@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import AddMovie from "./component/AddMovie";
 
+
 const Movies = () => {
+  const url = import.meta.env.VITE_API_NEW;
+
+  console.log(url)
   const [movies, setMovies] = useState([]);
   const [newMovie, setNewMovie] = useState({
     title: "",
@@ -21,7 +25,7 @@ const Movies = () => {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/movies");
+        const res = await fetch(`${url}/api/movies`);
         const data = await res.json();
         setMovies(data);
       } catch (err) {

@@ -53,9 +53,7 @@ const movieSchema = new mongoose.Schema({
 
 const Movie = mongoose.model("Movie", movieSchema);
 
-//
 // ------------------ ROUTES ------------------
-//
 
 // Create a movie
 app.post("/api/movies", async (req, res) => {

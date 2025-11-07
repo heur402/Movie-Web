@@ -5,6 +5,7 @@ import { Play } from "lucide-react";
 import Watch from "./Watch";
 
 const Movies = () => {
+  const url = import.meta.env.VITE_API_NEW;
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [likedMovies, setLikedMovies] = useState({});
@@ -33,7 +34,7 @@ const Movies = () => {
 
     const fetchMovies = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/movies");
+        const response = await fetch(`${url}/api/movies`);
         const data = await response.json();
 
         // 🧠 Compute avgRating for every movie first

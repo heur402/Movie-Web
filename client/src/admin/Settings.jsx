@@ -224,7 +224,7 @@ const Settings = () => {
                   >
                     <div className="space-y-3">
                       <div className="text-4xl text-gray-400 group-hover:text-red-400 transition-colors">
-                        📷
+                         //^\\
                       </div>
                       <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
                         Click to upload profile image

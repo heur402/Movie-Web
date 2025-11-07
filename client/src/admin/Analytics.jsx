@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 const Analytics = () => {
+  const url = import.meta.env.VITE_API_NEW;
   const [movies, setMovies] = useState([]);
   const [editingMovie, setEditingMovie] = useState(null); 
   const [editForm, setEditForm] = useState({
@@ -17,7 +18,7 @@ const Analytics = () => {
 
   const fetchMovies = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/movies");
+      const res = await fetch(`${url}/api/movies`);
       const data = await res.json();
       setMovies(data);
     } catch (err) {
