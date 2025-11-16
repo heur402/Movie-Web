@@ -14,7 +14,7 @@ const Trendings = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const moviesPerPage = 4;
+  const moviesPerPage = 3;
 
   // Fetch trending movies from DB
   useEffect(() => {
@@ -235,82 +235,90 @@ const Trendings = () => {
         </button>
       </div>
 
-      {/* Movie Table */}
-      <div className="overflow-x-auto mt-10">
-        <table className="min-w-full bg-white rounded-lg shadow">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="p-3 text-left">Poster</th>
-              <th className="p-3 text-left">Title</th>
-              <th className="p-3 text-left">Genre</th>
-              <th className="p-3 text-left">Rating</th>
-              <th className="p-3 text-left">Year</th>
-              <th className="p-3 text-left">Trailer</th>
-              <th className="p-3 text-left">Action</th>
+{/* Movie Table */}
+    <div className="overflow-x-auto rounded-xl mt-10">
+      <table className="min-w-full bg-white shadow-lg border-gray-200">
+        <thead className="bg-linear-to-r from-gray-600 to-black text-white">
+          <tr>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Poster</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Title</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Genre</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Rating</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Year</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Trailer</th>
+            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {currentTrendings.map((movie) => (
+            <tr key={movie._id} className="hover:bg-blue-50 transition-colors duration-200">
+              <td className="p-4">
+                {movie.image && (
+                  <img
+                    src={movie.image}
+                    alt={movie.title}
+                    className="w-16 h-20 object-cover rounded-lg shadow-sm border border-gray-200"
+                  />
+                )}
+              </td>
+              <td className="p-4 font-medium text-gray-900">{movie.title}</td>
+              <td className="p-4">
+                <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                  {movie.genre}
+                </span>
+              </td>
+              <td className="p-4">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  ⭐ {movie.rating}
+                </span>
+              </td>
+              <td className="p-4 text-gray-700 font-medium">{movie.year}</td>
+              <td className="p-4">
+                {movie.trailer ? (
+                  <video
+                    src={movie.trailer}
+                    controls
+                    className="w-32 h-20 rounded-lg shadow-sm border border-gray-200"
+                  />
+                ) : (
+                  <span className="text-gray-400 italic">N/A</span>
+                )}
+              </td>
+              <td className="p-4">
+                <button
+                  onClick={() => handleDelete(movie._id)}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {currentTrendings.map((movie) => (
-              <tr key={movie._id} className="border-b hover:bg-gray-100">
-                <td className="p-3">
-                  {movie.image && (
-                    <img
-                      src={movie.image}
-                      alt={movie.title}
-                      className="w-16 h-20 object-cover rounded"
-                    />
-                  )}
-                </td>
-                <td className="p-3">{movie.title}</td>
-                <td className="p-3">{movie.genre}</td>
-                <td className="p-3">{movie.rating}</td>
-                <td className="p-3">{movie.year}</td>
-                <td className="p-3">
-                  {movie.trailer ? (
-                    <video
-                      src={movie.trailer}
-                      controls
-                      className="w-32 h-20 rounded"
-                    />
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td className="p-3">
-                  <button
-                    onClick={() => handleDelete(movie._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          ))}
+        </tbody>
+      </table>
 
-        {trendings.length > moviesPerPage && (
-          <div className="flex justify-center items-center gap-2 mt-4 text-sm">
-            <button
-              onClick={prevPage}
-              disabled={currentPage === 1}
-              className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded disabled:opacity-50 flex items-center justify-center"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-white font-medium text-sm px-2">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={nextPage}
-              disabled={currentPage === totalPages}
-              className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded disabled:opacity-50 flex items-center justify-center"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
+      {trendings.length > moviesPerPage && (
+        <div className="flex justify-center items-center gap-3 mt-6">
+          <button
+            onClick={prevPage}
+            disabled={currentPage === 1}
+            className="bg-gray-700 hover:bg-gray-800 text-white p-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-white font-medium text-base px-3 bg-gray-700 py-1.5 rounded-lg">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={nextPage}
+            disabled={currentPage === totalPages}
+            className="bg-gray-700 hover:bg-gray-800 text-white p-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+    </div>
     </div>
   );
 };

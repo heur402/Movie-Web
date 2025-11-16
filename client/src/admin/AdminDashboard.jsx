@@ -4,6 +4,7 @@ import Movies from "./Movies";
 import Analytics from "./Analytics";
 import Trendings from "./trendings";
 import Settings from "./Settings";
+import SeasonUpload from "./SeasonUpload";
 
 const AdminDashboard = () => {
   return (
@@ -14,6 +15,7 @@ const AdminDashboard = () => {
           <Route path="/" element={<Analytics />} />
           <Route path="/movies" element={<Movies />} />
           <Route path="/trendings" element={<Trendings />} />
+          <Route path="/seasonUpload" element={<SeasonUpload />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </div>

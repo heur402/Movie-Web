@@ -11,6 +11,7 @@ const MovieWatch = () => {
   const [ratings, setRatings] = useState([]);
   const [userRating, setUserRating] = useState(0);
   const [isTrending, setIsTrending] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
 
   const isAdmin = false; // simulate admin
 
@@ -46,7 +47,14 @@ const MovieWatch = () => {
           setRelatedMovies(related);
 
           // Initialize ratings
-          setRatings(current.ratings || []);
+          const movieRatings = current.ratings || [];
+          setRatings(movieRatings);
+
+          // Calculate initial average rating
+          const initialAvg = movieRatings.length > 0
+            ? (movieRatings.reduce((sum, r) => sum + (r.score || r), 0) / movieRatings.length).toFixed(1)
+            : 0;
+          setAverageRating(initialAvg);
 
           setComments(current.comments || []);
         } else {
@@ -104,8 +112,13 @@ const MovieWatch = () => {
   };
 
   const handleRating = async (value) => {
-    setUserRating(value);
-    setRatings([...ratings, value]);
+    // Optimistically update the UI first
+    const newRatings = [...ratings, value];
+    setRatings(newRatings);
+    
+    // Calculate and update average rating immediately
+    const newAverage = (newRatings.reduce((sum, r) => sum + (r.score || r), 0) / newRatings.length).toFixed(1);
+    setAverageRating(newAverage);
     
     try {
       // Use different endpoint based on whether it's a trending movie
@@ -121,21 +134,32 @@ const MovieWatch = () => {
 
       if (!res.ok) throw new Error("Failed to add rating");
 
+      // Optional: Sync with server response to ensure consistency
       const updatedMovie = await res.json();
-      setRatings(updatedMovie.ratings.map(r => r.score));
+      const serverRatings = updatedMovie.ratings.map(r => r.score);
+      setRatings(serverRatings);
+      
+      // Recalculate average from server data
+      const serverAverage = serverRatings.length > 0
+        ? (serverRatings.reduce((sum, r) => sum + r, 0) / serverRatings.length).toFixed(1)
+        : 0;
+      setAverageRating(serverAverage);
+      
     } catch (err) {
       console.error(err);
       alert("Error submitting rating");
+      // Revert optimistic update on error
+      const revertedRatings = ratings.slice(0, -1);
+      setRatings(revertedRatings);
+      const revertedAverage = revertedRatings.length > 0
+        ? (revertedRatings.reduce((sum, r) => sum + (r.score || r), 0) / revertedRatings.length).toFixed(1)
+        : 0;
+      setAverageRating(revertedAverage);
     }
   };
 
-  const averageRating = movie.avgRating || (
-    ratings && ratings.length > 0
-      ? (
-          ratings.reduce((sum, r) => sum + (r.score || r), 0) / ratings.length
-        ).toFixed(1)
-      : 0
-  );
+  // Convert average rating to number for star display
+  const averageRatingNum = parseFloat(averageRating);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -155,14 +179,14 @@ const MovieWatch = () => {
           <h1 className="text-3xl font-bold mt-4">{movie.title}</h1>
           <p className="text-gray-400">{movie.year}</p>
 
-          {/* ⭐ Rating Section */}
+          {/* ⭐ Rating Section - Updated in real-time */}
           <div className="flex items-center gap-2 mt-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 onClick={() => handleRating(star)}
                 className={`text-2xl transition ${
-                  star <= userRating ? "text-yellow-400" : "text-gray-500"
+                  star <= averageRatingNum ? "text-yellow-400" : "text-gray-500"
                 } hover:text-yellow-400`}
               >
                 ★

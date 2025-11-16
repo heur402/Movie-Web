@@ -100,51 +100,63 @@ const Movies = () => {
 
       <AddMovie />
 
-      {/* Movie Table */}
       <div className="overflow-x-auto mt-10">
-        <table className="min-w-full bg-white rounded-lg shadow">
-          <thead className="bg-gray-800 text-white">
+        <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
+          <thead className="bg-linear-to-r from-gray-600 to-black text-white">
             <tr>
-              <th className="p-3 text-left">Poster</th>
-              <th className="p-3 text-left">Title</th>
-              <th className="p-3 text-left">Genre</th>
-              <th className="p-3 text-left">Rating</th>
-              <th className="p-3 text-left">Year</th>
-              <th className="p-3 text-left">Trailer</th>
-              <th className="p-3 text-left">Action</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Poster</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Title</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Genre</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Rating</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Year</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Trailer</th>
+              <th className="p-4 text-left font-bold text-sm uppercase tracking-wider">Action</th>
             </tr>
           </thead>
           <tbody>
-            {currentMovies.map((movie) => (
-              <tr key={movie._id} className="border-b hover:bg-gray-100">
-                <td className="p-3">
+            {currentMovies.map((movie, index) => (
+              <tr 
+                key={movie._id} 
+                className={`border-b border-gray-100 hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 ${
+                  index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                }`}
+              >
+                <td className="p-4">
                   {movie.image && (
                     <img
                       src={movie.image}
                       alt={movie.title}
-                      className="w-16 h-20 object-cover rounded"
+                      className="w-16 h-20 object-cover rounded-lg shadow-md border border-gray-200"
                     />
                   )}
                 </td>
-                <td className="p-3">{movie.title}</td>
-                <td className="p-3">{movie.genre}</td>
-                <td className="p-3">{movie.rating}</td>
-                <td className="p-3">{movie.year}</td>
-                <td className="p-3">
+                <td className="p-4 font-semibold text-gray-800">{movie.title}</td>
+                <td className="p-4">
+                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                    {movie.genre}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    ⭐ {movie.rating}
+                  </span>
+                </td>
+                <td className="p-4 font-medium text-gray-700">{movie.year}</td>
+                <td className="p-4">
                   {movie.trailer ? (
                     <video
                       src={movie.trailer}
                       controls
-                      className="w-32 h-20 rounded"
+                      className="w-32 h-20 rounded-lg shadow-md border border-gray-200"
                     />
                   ) : (
-                    "N/A"
+                    <span className="text-gray-400 italic bg-gray-100 px-3 py-1 rounded-lg">Not Available</span>
                   )}
                 </td>
-                <td className="p-3">
+                <td className="p-4">
                   <button
                     onClick={() => handleDelete(movie._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    className="bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     Delete
                   </button>
@@ -155,23 +167,23 @@ const Movies = () => {
         </table>
 
         {movies.length > moviesPerPage && (
-          <div className="flex justify-center items-center gap-2 mt-4 text-sm">
+          <div className="flex justify-center items-center gap-3 mt-6">
             <button
               onClick={prevPage}
               disabled={currentPage === 1}
-              className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded disabled:opacity-50 flex items-center justify-center"
+              className="bg-linear-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white p-3 rounded-xl disabled:opacity-50 flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={20} />
             </button>
-            <span className="text-white font-medium text-sm px-2">
+            <span className="text-white font-bold text-base px-4 py-2 bg-linearto-r from-gray-700 to-gray-800 rounded-xl shadow-md">
               {currentPage} / {totalPages}
             </span>
             <button
               onClick={nextPage}
               disabled={currentPage === totalPages}
-              className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded disabled:opacity-50 flex items-center justify-center"
+              className="bg-linear-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white p-3 rounded-xl disabled:opacity-50 flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={20} />
             </button>
           </div>
         )}

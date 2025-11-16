@@ -58,20 +58,20 @@ const Trending = () => {
         {/* Overlay */}
         <div className="absolute inset-0 bg-linear-to-br from-black/80 via-black/60 to-black/90"></div>
 
-        <div className="max-sm:mt-20 sm:max-md:mt-30 md:mt-20 lg:mt-100"></div>
+        <div className="max-sm:mt-20 sm:max-md:mt-30 md:mt-20 lg:mt-120"></div>
 
         {/* Content Section */}
         <div className="relative z-10 w-full lg:w-1/2 space-y-4 sm:space-y-5 md:space-y-6 mb-6 sm:mb-8 lg:mb-0 lg:pr-8 xl:pr-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
             {activeMovie?.title}
           </h2>
-          <p className="text-gray-300 text-sm sm:text-base md:text-lg lg:text-xl max-w-md sm:max-w-lg md:max-w-xl leading-relaxed">
+          <p className="text-gray-300 mb-10 text-sm sm:text-base md:text-lg lg:text-xl max-w-md sm:max-w-lg md:max-w-xl leading-relaxed">
             {activeMovie?.description}
           </p>
         </div>
 
         {/* Cards Section */}
-        <div className="relative z-10 w-full lg:w-auto">
+        <div className="relative z-10 w-full lg:w-auto mb-10">
           <div className="flex items-center justify-center gap-3 sm:gap-2 md:gap-2 lg:gap-2 xl:gap-2 relative">
             
             {/* Left Card */}
