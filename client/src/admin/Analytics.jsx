@@ -1,7 +1,7 @@
 // src/admin/Analytics.jsx — Analytics dashboard with charts
 import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Film, TrendingUp, Star, Eye, MessageCircle, BarChart2 } from "lucide-react";
+import { Film, TrendingUp, Star, MessageCircle, BarChart2 } from "lucide-react";
 import DisplayAll from "./component/DisplayAll";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
@@ -80,12 +80,11 @@ const Analytics = () => {
       <DisplayAll />
 
       {/* Extra stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: "Total Comments", value: totalComments, icon: MessageCircle, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-          { label: "Total Ratings", value: totalRatings, icon: Star, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
-          { label: "Genres", value: genreData.length, icon: BarChart2, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-          { label: "Avg Views", value: movies.length > 0 ? Math.round(movies.reduce((a, m) => a + (m.views || 0), 0) / movies.length) : 0, icon: Eye, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
+          { label: "Total Ratings",  value: totalRatings,  icon: Star,          color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
+          { label: "Genres",         value: genreData.length, icon: BarChart2,  color: "text-blue-400",   bg: "bg-blue-500/10 border-blue-500/20"   },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={`${bg} border rounded-2xl p-5`}>
             <div className="flex items-center justify-between mb-3">

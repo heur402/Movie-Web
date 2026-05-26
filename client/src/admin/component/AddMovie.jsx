@@ -4,7 +4,7 @@ import { Upload, X, Link as LinkIcon, Film, Loader, User, Video } from "lucide-r
 
 const API    = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const GENRES = ["Action","Drama","Comedy","Horror","Romance","Sci-Fi","Adventure",
-                "Thriller","Animation","Indian","Others"];
+                "Thriller","Animation","Cartoon","Indian","Others"];
 
 const ic = "bg-gray-900/80 border border-gray-700/60 text-white placeholder-gray-500 " +
            "px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/50 " +
@@ -13,7 +13,7 @@ const ic = "bg-gray-900/80 border border-gray-700/60 text-white placeholder-gray
 const AddMovie = ({ onMovieAdded }) => {
   const [form, setForm] = useState({
     title: "", year: "", rating: "", genre: "",
-    image: "", trailer: "", description: "", duration: "",
+    image: "", trailer: "", description: "",
     translatorName: "", movieLink: "",
   });
   const [posterFile,      setPosterFile]      = useState(null);
@@ -65,7 +65,7 @@ const AddMovie = ({ onMovieAdded }) => {
       setMessage({ type: "success", text: `"${saved.title}" added successfully!` });
       setForm({
         title: "", year: "", rating: "", genre: "",
-        image: "", trailer: "", description: "", duration: "",
+        image: "", trailer: "", description: "",
         translatorName: "", movieLink: "",
       });
       setPosterFile(null);
@@ -100,9 +100,6 @@ const AddMovie = ({ onMovieAdded }) => {
 
           <input className={ic} placeholder="Rating (e.g. 8.5)" value={form.rating}
             onChange={(e) => set("rating", e.target.value)} />
-
-          <input className={ic} placeholder="Duration (e.g. 2h 15m)" value={form.duration}
-            onChange={(e) => set("duration", e.target.value)} />
 
           <input className={ic} placeholder="Trailer URL (YouTube embed or link)" value={form.trailer}
             onChange={(e) => set("trailer", e.target.value)} />

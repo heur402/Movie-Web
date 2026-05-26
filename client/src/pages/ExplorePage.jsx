@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, ChevronDown, Film } from "lucide-react";
+import { Search, X, ChevronDown, Film, User } from "lucide-react";
 import MovieCard from "../components/MovieCard";
 import SkeletonCard from "../components/SkeletonCard";
 import Footer from "../components/Footer";
@@ -14,9 +14,10 @@ const ExplorePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter state — initialized from URL
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [activeGenre, setActiveGenre] = useState(searchParams.get("genre") || "All");
-  const [activeYear, setActiveYear] = useState(searchParams.get("year") || "");
+  const [search,          setSearch]          = useState(searchParams.get("search") || "");
+  const [activeGenre,     setActiveGenre]     = useState(searchParams.get("genre") || "All");
+  const [activeYear,      setActiveYear]      = useState(searchParams.get("year") || "");
+  const [activeTranslator,setActiveTranslator]= useState(searchParams.get("translator") || "");
   const [page, setPage] = useState(1);
 
   // Data state
@@ -27,10 +28,10 @@ const ExplorePage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Filter options from DB
-  const [genres, setGenres] = useState([]);
-  const [years, setYears] = useState([]);
+  const [genres,      setGenres]      = useState([]);
+  const [years,       setYears]       = useState([]);
+  const [translators, setTranslators] = useState([]);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   const searchInputRef = useRef(null);
   const yearDropdownRef = useRef(null);

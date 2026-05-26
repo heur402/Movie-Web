@@ -221,16 +221,16 @@ const MovieWatch = () => {
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 mt-4 flex-wrap">
-                {/* Watch Full Movie → /watch/:id */}
+                {/* Watch Full Movie → /watch/:id — uses Link for instant SPA navigation */}
                 {hasFullMovie ? (
-                  <button
-                    onClick={() => navigate(`/watch/${id}`)}
+                  <Link
+                    to={`/watch/${id}`}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600
                                hover:bg-red-500 text-white text-sm font-bold transition-all
                                shadow-lg shadow-red-600/30"
                   >
                     <Play size={16} fill="white" /> Watch Full Movie
-                  </button>
+                  </Link>
                 ) : (
                   <span className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-800
                                    border border-gray-700 text-gray-500 text-sm font-medium cursor-not-allowed">
@@ -256,11 +256,23 @@ const MovieWatch = () => {
                 </button>
 
                 {hasFullMovie && (
-                  <a href={movie.videoUrl || movie.movieLink} download
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const url = movie.videoUrl || movie.movieLink;
+                      const a   = document.createElement("a");
+                      a.href     = url;
+                      a.download = movie.title || "movie";
+                      a.target   = "_blank";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10
-                               bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium transition-all">
+                               bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium transition-all"
+                  >
                     <Download size={15} /> Download
-                  </a>
+                  </button>
                 )}
               </div>
 

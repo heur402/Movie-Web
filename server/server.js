@@ -178,6 +178,19 @@ const getRelatedMovies = (current, allMovies, limit = 12) => {
 // MOVIE ROUTES  (specific paths BEFORE /:id)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// GET /api/movies/translators — unique translator names from DB
+app.get("/api/movies/translators", async (req, res) => {
+  try {
+    const movies = await Movie.find({
+      status: "published",
+      translatorName: { $exists: true, $ne: "" },
+    }).select("translatorName");
+    const set = new Set();
+    movies.forEach((m) => { if (m.translatorName?.trim()) set.add(m.translatorName.trim()); });
+    res.json([...set].sort());
+  } catch { res.status(500).json({ error: "Server error" }); }
+});
+
 app.get("/api/movies/search", async (req, res) => {
   try {
     const { q } = req.query;
@@ -215,7 +228,7 @@ app.get("/api/movies/years", async (req, res) => {
 
 app.get("/api/movies/explore", async (req, res) => {
   try {
-    const { genre, year, search, page = 1, limit = 20 } = req.query;
+    const { genre, year, search, translator, page = 1, limit = 20 } = req.query;
     const query = { status: "published" };
     if (search) query.$or = [
       { title       : { $regex: search, $options: "i" } },
@@ -223,6 +236,7 @@ app.get("/api/movies/explore", async (req, res) => {
     ];
     if (genre && genre !== "All") query.genre = { $regex: genre, $options: "i" };
     if (year) query.year = year;
+    if (translator) query.translatorName = { $regex: translator, $options: "i" };
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [movies, total] = await Promise.all([
       Movie.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),

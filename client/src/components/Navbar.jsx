@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Heart, Clock, X, ChevronDown, Film, Menu } from "lucide-react";
@@ -10,25 +10,25 @@ const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const GENRES = [
   "Action", "Drama", "Comedy", "Horror",
   "Romance", "Sci-Fi", "Adventure", "Thriller",
-  "Animation", "Indian", "Others",
+  "Animation", "Cartoon", "Indian", "Others",
 ];
 
 const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearch, setShowSearch] = useState(false);
-  const [showGenres, setShowGenres] = useState(false);
+  // ── ALL hooks must come before any conditional return ──────────────────────
+  const [scrolled,       setScrolled]       = useState(false);
+  const [searchQuery,    setSearchQuery]    = useState("");
+  const [searchResults,  setSearchResults]  = useState([]);
+  const [showSearch,     setShowSearch]     = useState(false);
+  const [showGenres,     setShowGenres]     = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showFavorites, setShowFavorites] = useState(false);
-  const searchRef = useRef(null);
-  const genreRef = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { favorites, watchHistory } = useApp();
+  const [showFavorites,  setShowFavorites]  = useState(false);
 
-  // Hide on admin and watch pages
-  if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/watch")) return null;
+  const searchRef = useRef(null);
+  const genreRef  = useRef(null);
+
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { favorites } = useApp();
 
   // Scroll effect
   useEffect(() => {
@@ -67,20 +67,9 @@ const Navbar = () => {
     }
     const timer = setTimeout(async () => {
       try {
-        const [movRes, trRes] = await Promise.all([
-          fetch(`${API}/api/movies/search?q=${encodeURIComponent(searchQuery)}`),
-          fetch(`${API}/api/trending`),
-        ]);
-        const movies = await movRes.json();
-        const trending = await trRes.json();
-        const filteredTrending = trending.filter((m) =>
-          m.title?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        const combined = [...movies, ...filteredTrending];
-        const unique = combined.filter(
-          (m, i, self) => i === self.findIndex((x) => x._id === m._id)
-        );
-        setSearchResults(unique.slice(0, 8));
+        const res    = await fetch(`${API}/api/movies/search?q=${encodeURIComponent(searchQuery)}`);
+        const movies = await res.json();
+        setSearchResults(Array.isArray(movies) ? movies.slice(0, 8) : []);
       } catch {
         setSearchResults([]);
       }
@@ -88,6 +77,14 @@ const Navbar = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // ── NOW it is safe to conditionally return ─────────────────────────────────
+  const hidden =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/watch");
+
+  if (hidden) return null;
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -103,6 +100,7 @@ const Navbar = () => {
     setShowGenres(false);
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <motion.nav
       initial={{ y: -80 }}
@@ -115,9 +113,11 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0 group">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center group-hover:bg-red-500 transition-colors">
+          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center
+                          group-hover:bg-red-500 transition-colors">
             <Film size={18} className="text-white" />
           </div>
           <span className="text-white font-bold text-xl hidden sm:block tracking-tight">
@@ -125,18 +125,20 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Desktop Nav Links */}
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-1">
           <NavLink to="/">Home</NavLink>
           <NavLink to="/explore">Explore</NavLink>
 
-          {/* Genres Dropdown */}
+          {/* Genres dropdown */}
           <div className="relative" ref={genreRef}>
             <button
               onClick={() => setShowGenres(!showGenres)}
-              className="flex items-center gap-1 px-3 py-2 text-gray-300 hover:text-white text-sm font-medium transition-colors rounded-lg hover:bg-white/10"
+              className="flex items-center gap-1 px-3 py-2 text-gray-300 hover:text-white
+                         text-sm font-medium transition-colors rounded-lg hover:bg-white/10"
             >
-              Genres <ChevronDown size={14} className={`transition-transform ${showGenres ? "rotate-180" : ""}`} />
+              Genres
+              <ChevronDown size={14} className={`transition-transform ${showGenres ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
               {showGenres && (
@@ -145,14 +147,13 @@ const Navbar = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-44 bg-gray-900/98 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden"
+                  className="absolute top-full left-0 mt-2 w-44 bg-gray-900/98 backdrop-blur-xl
+                             border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden"
                 >
                   {GENRES.map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => handleGenreClick(g)}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-red-600/20 transition-colors"
-                    >
+                    <button key={g} onClick={() => handleGenreClick(g)}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-300
+                                 hover:text-white hover:bg-red-600/20 transition-colors">
                       {g}
                     </button>
                   ))}
@@ -162,32 +163,30 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Search Bar (desktop) */}
+        {/* Search bar (desktop) */}
         <div className="hidden md:flex flex-1 max-w-sm" ref={searchRef}>
           <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-            />
+            <Search size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSearch(true)}
               placeholder="Search movies..."
-              className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-400 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:bg-white/15 transition-all"
+              className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-400
+                         rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2
+                         focus:ring-red-500/50 focus:bg-white/15 transition-all"
             />
             {searchQuery && (
-              <button
-                type="button"
+              <button type="button"
                 onClick={() => { setSearchQuery(""); setSearchResults([]); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
                 <X size={14} />
               </button>
             )}
 
-            {/* Search Dropdown */}
+            {/* Search dropdown */}
             <AnimatePresence>
               {showSearch && searchResults.length > 0 && (
                 <motion.div
@@ -195,17 +194,16 @@ const Navbar = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-gray-900/98 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden z-50 max-h-80 overflow-y-auto"
+                  className="absolute top-full left-0 right-0 mt-2 bg-gray-900/98 backdrop-blur-xl
+                             border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden z-50
+                             max-h-80 overflow-y-auto"
                 >
                   {searchResults.map((movie) => (
-                    <Link
-                      key={movie._id}
-                      to={`/movie/${movie._id}`}
+                    <Link key={movie._id} to={`/movie/${movie._id}`}
                       onClick={() => { setSearchQuery(""); setSearchResults([]); setShowSearch(false); }}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
-                    >
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group">
                       <img
-                        src={movie.image || movie.posterUrls?.[0] || "https://via.placeholder.com/40x56?text=?"}
+                        src={movie.image || movie.posterUrls?.[0] || "https://placehold.co/40x56?text=?"}
                         alt={movie.title}
                         className="w-10 h-14 object-cover rounded-lg shrink-0"
                       />
@@ -217,10 +215,9 @@ const Navbar = () => {
                       </div>
                     </Link>
                   ))}
-                  <button
-                    onClick={handleSearchSubmit}
-                    className="w-full px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors text-center border-t border-gray-700/50"
-                  >
+                  <button onClick={handleSearchSubmit}
+                    className="w-full px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors
+                               text-center border-t border-gray-700/50">
                     See all results for "{searchQuery}"
                   </button>
                 </motion.div>
@@ -229,18 +226,19 @@ const Navbar = () => {
           </form>
         </div>
 
-        {/* Right Actions */}
+        {/* Right actions */}
         <div className="flex items-center gap-2">
+
           {/* Favorites */}
           <div className="relative">
-            <button
-              onClick={() => setShowFavorites(!showFavorites)}
-              className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-              aria-label="Favorites"
-            >
+            <button onClick={() => setShowFavorites(!showFavorites)}
+              className="relative p-2 text-gray-300 hover:text-white transition-colors
+                         rounded-lg hover:bg-white/10"
+              aria-label="Favorites">
               <Heart size={20} className={favorites.length > 0 ? "fill-red-500 text-red-500" : ""} />
               {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-xs
+                                 rounded-full flex items-center justify-center font-bold">
                   {favorites.length > 9 ? "9+" : favorites.length}
                 </span>
               )}
@@ -253,7 +251,8 @@ const Navbar = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full right-0 mt-2 w-72 bg-gray-900/98 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden z-50"
+                  className="absolute top-full right-0 mt-2 w-72 bg-gray-900/98 backdrop-blur-xl
+                             border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden z-50"
                 >
                   <div className="px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
                     <span className="text-white font-semibold text-sm">My Favorites</span>
@@ -267,14 +266,11 @@ const Navbar = () => {
                   ) : (
                     <div className="max-h-64 overflow-y-auto">
                       {favorites.slice(0, 6).map((movie) => (
-                        <Link
-                          key={movie._id}
-                          to={`/movie/${movie._id}`}
+                        <Link key={movie._id} to={`/movie/${movie._id}`}
                           onClick={() => setShowFavorites(false)}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors"
-                        >
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors">
                           <img
-                            src={movie.image || movie.posterUrls?.[0] || "https://via.placeholder.com/40x56?text=?"}
+                            src={movie.image || movie.posterUrls?.[0] || "https://placehold.co/40x56?text=?"}
                             alt={movie.title}
                             className="w-8 h-12 object-cover rounded shrink-0"
                           />
@@ -287,11 +283,8 @@ const Navbar = () => {
                     </div>
                   )}
                   <div className="px-4 py-2 border-t border-gray-700/50">
-                    <Link
-                      to="/favorites"
-                      onClick={() => setShowFavorites(false)}
-                      className="text-red-400 text-xs hover:text-red-300 transition-colors"
-                    >
+                    <Link to="/favorites" onClick={() => setShowFavorites(false)}
+                      className="text-red-400 text-xs hover:text-red-300 transition-colors">
                       View all favorites →
                     </Link>
                   </div>
@@ -301,26 +294,24 @@ const Navbar = () => {
           </div>
 
           {/* Continue Watching */}
-          <Link
-            to="/history"
-            className="hidden sm:flex p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-            aria-label="Watch History"
-          >
+          <Link to="/history"
+            className="hidden sm:flex p-2 text-gray-300 hover:text-white transition-colors
+                       rounded-lg hover:bg-white/10"
+            aria-label="Watch History">
             <Clock size={20} />
           </Link>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-            aria-label="Menu"
-          >
+          {/* Mobile menu toggle */}
+          <button onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden p-2 text-gray-300 hover:text-white transition-colors
+                       rounded-lg hover:bg-white/10"
+            aria-label="Menu">
             {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {showMobileMenu && (
           <motion.div
@@ -331,32 +322,32 @@ const Navbar = () => {
             className="md:hidden bg-black/98 backdrop-blur-xl border-t border-gray-800 overflow-hidden"
           >
             <div className="px-4 py-4 space-y-2">
-              {/* Mobile Search */}
+              {/* Mobile search */}
               <form onSubmit={handleSearchSubmit} className="relative mb-4">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
+                <input type="text" value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search movies..."
-                  className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-400 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                />
+                  className="w-full bg-white/10 border border-white/10 text-white placeholder-gray-400
+                             rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none
+                             focus:ring-2 focus:ring-red-500/50" />
               </form>
 
-              <MobileNavLink to="/" onClick={() => setShowMobileMenu(false)}>Home</MobileNavLink>
-              <MobileNavLink to="/explore" onClick={() => setShowMobileMenu(false)}>Explore</MobileNavLink>
-              <MobileNavLink to="/favorites" onClick={() => setShowMobileMenu(false)}>Favorites ({favorites.length})</MobileNavLink>
-              <MobileNavLink to="/history" onClick={() => setShowMobileMenu(false)}>Continue Watching</MobileNavLink>
+              <MobileNavLink to="/"          onClick={() => setShowMobileMenu(false)}>Home</MobileNavLink>
+              <MobileNavLink to="/explore"   onClick={() => setShowMobileMenu(false)}>Explore</MobileNavLink>
+              <MobileNavLink to="/favorites" onClick={() => setShowMobileMenu(false)}>
+                Favorites ({favorites.length})
+              </MobileNavLink>
+              <MobileNavLink to="/history"   onClick={() => setShowMobileMenu(false)}>Continue Watching</MobileNavLink>
 
               <div className="pt-2 border-t border-gray-800">
                 <p className="text-gray-500 text-xs uppercase tracking-wider mb-2 px-2">Genres</p>
                 <div className="grid grid-cols-3 gap-1">
                   {GENRES.map((g) => (
-                    <button
-                      key={g}
+                    <button key={g}
                       onClick={() => { handleGenreClick(g); setShowMobileMenu(false); }}
-                      className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                    >
+                      className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white
+                                 hover:bg-white/10 rounded-lg transition-colors">
                       {g}
                     </button>
                   ))}
@@ -370,27 +361,24 @@ const Navbar = () => {
   );
 };
 
+// ── Sub-components ─────────────────────────────────────────────────────────────
 const NavLink = ({ to, children }) => {
   const location = useLocation();
-  const active = location.pathname === to;
+  const active   = location.pathname === to;
   return (
-    <Link
-      to={to}
+    <Link to={to}
       className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
         active ? "text-white bg-white/10" : "text-gray-300 hover:text-white hover:bg-white/10"
-      }`}
-    >
+      }`}>
       {children}
     </Link>
   );
 };
 
 const MobileNavLink = ({ to, children, onClick }) => (
-  <Link
-    to={to}
-    onClick={onClick}
-    className="block px-3 py-2.5 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-sm font-medium"
-  >
+  <Link to={to} onClick={onClick}
+    className="block px-3 py-2.5 text-gray-300 hover:text-white hover:bg-white/10
+               rounded-lg transition-colors text-sm font-medium">
     {children}
   </Link>
 );
