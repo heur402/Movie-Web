@@ -20,7 +20,7 @@ const Trending = () => {
         // Use the new auto-trending endpoint
         const res  = await fetch(`${API}/api/movies/trending`);
         const data = await res.json();
-        setMovies(Array.isArray(data) ? data : []);
+        setMovies(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch (err) {
         console.error("Trending fetch error:", err);
       } finally {

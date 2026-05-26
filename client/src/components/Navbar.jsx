@@ -27,8 +27,8 @@ const Navbar = () => {
   const location = useLocation();
   const { favorites, watchHistory } = useApp();
 
-  // Hide on admin pages
-  if (location.pathname.startsWith("/admin")) return null;
+  // Hide on admin and watch pages
+  if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/watch")) return null;
 
   // Scroll effect
   useEffect(() => {

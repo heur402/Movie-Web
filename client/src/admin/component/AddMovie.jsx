@@ -104,7 +104,7 @@ const AddMovie = ({ onMovieAdded }) => {
           <input className={ic} placeholder="Duration (e.g. 2h 15m)" value={form.duration}
             onChange={(e) => set("duration", e.target.value)} />
 
-          <input className={ic} placeholder="Trailer URL (YouTube)" value={form.trailer}
+          <input className={ic} placeholder="Trailer URL (YouTube embed or link)" value={form.trailer}
             onChange={(e) => set("trailer", e.target.value)} />
         </div>
 
@@ -119,17 +119,18 @@ const AddMovie = ({ onMovieAdded }) => {
           />
         </div>
 
-        {/* Movie Link */}
+        {/* Movie Link — separate from trailer */}
         <div className="space-y-1">
-          <label className="text-xs text-gray-400 font-medium flex items-center gap-1">
+          <label className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
             <Video size={12} className="text-purple-400" />
-            Movie Link — Cloudinary URL, pre-upload link, or external video URL
+            Full Movie URL
+            <span className="text-gray-600">— Cloudinary, pre-upload link, or direct video URL (separate from trailer)</span>
           </label>
           <div className="relative">
             <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400" />
             <input
               className={ic + " pl-9"}
-              placeholder="https://res.cloudinary.com/... or external video URL"
+              placeholder="https://res.cloudinary.com/... or direct .mp4 URL"
               value={form.movieLink}
               onChange={(e) => set("movieLink", e.target.value)}
             />

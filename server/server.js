@@ -239,15 +239,14 @@ app.get("/api/movies/latest", async (req, res) => {
   } catch { res.status(500).json({ error: "Server error" }); }
 });
 
-// AUTO-TRENDING: top movies by trendingScore (recalculated on the fly)
+// AUTO-TRENDING: top 5 movies by trendingScore (recalculated on the fly)
 app.get("/api/movies/trending", async (req, res) => {
   try {
     const movies = await Movie.find({ status: "published" });
-    // Recalculate scores and sort
     const scored = movies
       .map((m) => ({ ...m.toObject(), _score: calcTrendingScore(m) }))
       .sort((a, b) => b._score - a._score)
-      .slice(0, 10);
+      .slice(0, 5);
     res.json(scored);
   } catch { res.status(500).json({ error: "Server error" }); }
 });
@@ -389,14 +388,14 @@ app.post("/api/movies/:id/rate", async (req, res) => {
 // TRENDING — now auto-generated, legacy manual endpoint kept for compatibility
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Redirect old /api/trending to auto-trending
+// Redirect old /api/trending to auto-trending — capped at 5
 app.get("/api/trending", async (req, res) => {
   try {
     const movies = await Movie.find({ status: "published" });
     const scored = movies
       .map((m) => ({ ...m.toObject(), _score: calcTrendingScore(m) }))
       .sort((a, b) => b._score - a._score)
-      .slice(0, 10);
+      .slice(0, 5);
     res.json(scored);
   } catch { res.status(500).json({ message: "Failed to fetch trending" }); }
 });
