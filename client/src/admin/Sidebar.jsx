@@ -3,16 +3,15 @@ import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Film, TrendingUp, Upload,
-  Settings, Menu, X, LogOut, Film as FilmIcon
+  LayoutDashboard, Film, Upload, Settings,
+  Menu, X, LogOut, Film as FilmIcon,
 } from "lucide-react";
 
 const menuItems = [
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/movies", label: "Movies", icon: Film },
-  { path: "/admin/trendings", label: "Trending", icon: TrendingUp },
-  { path: "/admin/seasonUpload", label: "Season Upload", icon: Upload },
-  { path: "/admin/settings", label: "Settings", icon: Settings },
+  { path: "/admin",          label: "Dashboard",   icon: LayoutDashboard },
+  { path: "/admin/movies",   label: "Movies",      icon: Film            },
+  { path: "/admin/preupload",label: "Pre-Upload",  icon: Upload          },
+  { path: "/admin/settings", label: "Settings",    icon: Settings        },
 ];
 
 const Sidebar = () => {
@@ -22,7 +21,9 @@ const Sidebar = () => {
   useEffect(() => { setMobileOpen(false); }, [location]);
 
   const isActive = (path) =>
-    path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path);
+    path === "/admin"
+      ? location.pathname === "/admin"
+      : location.pathname.startsWith(path);
 
   return (
     <>
@@ -30,7 +31,9 @@ const Sidebar = () => {
       {!mobileOpen && (
         <button
           onClick={() => setMobileOpen(true)}
-          className="md:hidden fixed top-4 left-4 z-50 p-2.5 bg-gray-900 border border-gray-700 text-white rounded-xl shadow-xl hover:bg-gray-800 transition-all"
+          className="md:hidden fixed top-4 left-4 z-50 p-2.5 bg-gray-900 border
+                     border-gray-700 text-white rounded-xl shadow-xl hover:bg-gray-800
+                     transition-all"
         >
           <Menu size={20} />
         </button>
@@ -49,10 +52,8 @@ const Sidebar = () => {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ x: mobileOpen ? 0 : undefined }}
+      {/* Sidebar panel */}
+      <aside
         className={`
           w-60 bg-gray-950 border-r border-gray-800/60 flex flex-col
           fixed md:sticky top-0 h-screen z-50
@@ -63,7 +64,8 @@ const Sidebar = () => {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-800/60 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center group-hover:bg-red-500 transition-colors">
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center
+                            group-hover:bg-red-500 transition-colors">
               <FilmIcon size={16} className="text-white" />
             </div>
             <div>
@@ -88,7 +90,8 @@ const Sidebar = () => {
                 key={path}
                 to={path}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                  transition-all
                   ${active
                     ? "bg-red-600/15 text-red-400 border border-red-500/20"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -97,9 +100,7 @@ const Sidebar = () => {
               >
                 <Icon size={17} className={active ? "text-red-400" : ""} />
                 {label}
-                {active && (
-                  <div className="ml-auto w-1.5 h-1.5 bg-red-500 rounded-full" />
-                )}
+                {active && <div className="ml-auto w-1.5 h-1.5 bg-red-500 rounded-full" />}
               </Link>
             );
           })}
@@ -109,13 +110,14 @@ const Sidebar = () => {
         <div className="px-3 py-4 border-t border-gray-800/60">
           <Link
             to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                       text-gray-400 hover:text-white hover:bg-white/5 transition-all"
           >
             <LogOut size={17} />
             Back to Site
           </Link>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 };

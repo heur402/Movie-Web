@@ -1,32 +1,28 @@
-// src/admin/Movies.jsx — Manage movies with inline edit
+// src/admin/Movies.jsx
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Check, Upload, Loader } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Check, Upload, Loader, User, Video } from "lucide-react";
 import AddMovie from "./component/AddMovie";
 
-const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
+const API     = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const PER_PAGE = 8;
 
 const Movies = () => {
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [movies,    setMovies]    = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [page,      setPage]      = useState(1);
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [editPosterFile, setEditPosterFile] = useState(null);
+  const [editForm,  setEditForm]  = useState({});
+  const [editPosterFile,    setEditPosterFile]    = useState(null);
   const [editPosterPreview, setEditPosterPreview] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
+  const [savingEdit,  setSavingEdit]  = useState(false);
+  const [deletingId,  setDeletingId]  = useState(null);
 
   const fetchMovies = async () => {
     try {
-      const res = await fetch(`${API}/api/movies`);
-      const data = await res.json();
-      setMovies(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      const res  = await fetch(`${API}/api/movies`);
+      setMovies(await res.json());
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetchMovies(); }, []);
@@ -39,14 +35,16 @@ const Movies = () => {
   const startEdit = (movie) => {
     setEditingId(movie._id);
     setEditForm({
-      title: movie.title || "",
-      genre: movie.genre || "",
-      year: movie.year || "",
-      rating: movie.rating || "",
-      description: movie.description || "",
-      trailer: movie.trailer || "",
-      duration: movie.duration || "",
-      image: movie.image || "",
+      title          : movie.title          || "",
+      genre          : movie.genre          || "",
+      year           : movie.year           || "",
+      rating         : movie.rating         || "",
+      description    : movie.description    || "",
+      trailer        : movie.trailer        || "",
+      duration       : movie.duration       || "",
+      translatorName : movie.translatorName || "",
+      movieLink      : movie.movieLink      || "",
+      image          : movie.image          || "",
     });
     setEditPosterFile(null);
     setEditPosterPreview("");
@@ -59,43 +57,27 @@ const Movies = () => {
     setEditPosterPreview("");
   };
 
-  const handleEditPosterFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setEditPosterFile(file);
-    setEditPosterPreview(URL.createObjectURL(file));
-  };
-
   const saveEdit = async (id) => {
     setSavingEdit(true);
     try {
       let imageUrl = editForm.image;
-
-      // Upload new poster if file selected
       if (editPosterFile) {
-        const fd = new FormData();
+        const fd  = new FormData();
         fd.append("image", editPosterFile);
-        const upRes = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
-        if (upRes.ok) {
-          const { url } = await upRes.json();
-          imageUrl = url;
-        }
+        const up  = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
+        if (up.ok) { const { url } = await up.json(); imageUrl = url; }
       }
-
       const res = await fetch(`${API}/api/movies/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editForm, image: imageUrl }),
+        method  : "PUT",
+        headers : { "Content-Type": "application/json" },
+        body    : JSON.stringify({ ...editForm, image: imageUrl }),
       });
       if (!res.ok) throw new Error("Update failed");
       const updated = await res.json();
       setMovies((prev) => prev.map((m) => (m._id === id ? updated : m)));
       cancelEdit();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setSavingEdit(false);
-    }
+    } catch (err) { alert(err.message); }
+    finally { setSavingEdit(false); }
   };
 
   const handleDelete = async (id) => {
@@ -105,17 +87,15 @@ const Movies = () => {
       await fetch(`${API}/api/movies/${id}`, { method: "DELETE" });
       setMovies((prev) => prev.filter((m) => m._id !== id));
       if (editingId === id) cancelEdit();
-    } catch (err) {
-      alert("Delete failed");
-    } finally {
-      setDeletingId(null);
-    }
+    } catch { alert("Delete failed"); }
+    finally { setDeletingId(null); }
   };
 
   const totalPages = Math.ceil(movies.length / PER_PAGE);
-  const paginated = movies.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const paginated  = movies.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const inputCls = "bg-gray-800 border border-gray-600 text-white text-xs px-2 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500 w-full";
+  const ic = "bg-gray-800 border border-gray-600 text-white text-xs px-2 py-1.5 " +
+             "rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500 w-full";
 
   return (
     <div className="space-y-6">
@@ -143,6 +123,7 @@ const Movies = () => {
                   <th className="px-4 py-3 text-left">Genre</th>
                   <th className="px-4 py-3 text-left">Year</th>
                   <th className="px-4 py-3 text-left">Rating</th>
+                  <th className="px-4 py-3 text-left">Translator</th>
                   <th className="px-4 py-3 text-left">Views</th>
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
@@ -155,18 +136,21 @@ const Movies = () => {
                       {editingId === movie._id ? (
                         <div className="flex items-center gap-2">
                           <img
-                            src={editPosterPreview || editForm.image || "https://via.placeholder.com/40x56?text=?"}
-                            alt=""
-                            className="w-10 h-14 object-cover rounded"
+                            src={editPosterPreview || editForm.image || "https://placehold.co/40x56?text=?"}
+                            alt="" className="w-10 h-14 object-cover rounded"
                           />
                           <label className="cursor-pointer text-red-400 hover:text-red-300">
                             <Upload size={14} />
-                            <input type="file" accept="image/*" className="hidden" onChange={handleEditPosterFile} />
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files[0];
+                                if (f) { setEditPosterFile(f); setEditPosterPreview(URL.createObjectURL(f)); }
+                              }} />
                           </label>
                         </div>
                       ) : (
                         <img
-                          src={movie.posterUrls?.[0] || movie.image || "https://via.placeholder.com/40x56?text=?"}
+                          src={movie.posterUrls?.[0] || movie.image || "https://placehold.co/40x56?text=?"}
                           alt={movie.title}
                           className="w-10 h-14 object-cover rounded shadow"
                         />
@@ -174,37 +158,49 @@ const Movies = () => {
                     </td>
 
                     {/* Title */}
-                    <td className="px-4 py-3 text-white font-medium max-w-[160px]">
-                      {editingId === movie._id ? (
-                        <input className={inputCls} value={editForm.title} onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
-                      ) : (
-                        <span className="truncate block">{movie.title}</span>
-                      )}
+                    <td className="px-4 py-3 text-white font-medium max-w-[140px]">
+                      {editingId === movie._id
+                        ? <input className={ic} value={editForm.title}
+                            onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))} />
+                        : <span className="truncate block">{movie.title}</span>
+                      }
                     </td>
 
                     {/* Genre */}
                     <td className="px-4 py-3 text-gray-300">
-                      {editingId === movie._id ? (
-                        <input className={inputCls} value={editForm.genre} onChange={(e) => setEditForm((p) => ({ ...p, genre: e.target.value }))} />
-                      ) : (
-                        <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs">{movie.genre}</span>
-                      )}
+                      {editingId === movie._id
+                        ? <input className={ic} value={editForm.genre}
+                            onChange={(e) => setEditForm((p) => ({ ...p, genre: e.target.value }))} />
+                        : <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs">{movie.genre}</span>
+                      }
                     </td>
 
                     {/* Year */}
                     <td className="px-4 py-3 text-gray-300">
-                      {editingId === movie._id ? (
-                        <input className={inputCls + " w-20"} value={editForm.year} onChange={(e) => setEditForm((p) => ({ ...p, year: e.target.value }))} />
-                      ) : movie.year}
+                      {editingId === movie._id
+                        ? <input className={ic + " w-20"} value={editForm.year}
+                            onChange={(e) => setEditForm((p) => ({ ...p, year: e.target.value }))} />
+                        : movie.year
+                      }
                     </td>
 
                     {/* Rating */}
                     <td className="px-4 py-3">
-                      {editingId === movie._id ? (
-                        <input className={inputCls + " w-16"} type="number" min="0" max="10" step="0.1" value={editForm.rating} onChange={(e) => setEditForm((p) => ({ ...p, rating: e.target.value }))} />
-                      ) : (
-                        <span className="text-yellow-400 font-semibold">⭐ {movie.rating || "N/A"}</span>
-                      )}
+                      {editingId === movie._id
+                        ? <input className={ic + " w-16"} type="number" min="0" max="10" step="0.1"
+                            value={editForm.rating}
+                            onChange={(e) => setEditForm((p) => ({ ...p, rating: e.target.value }))} />
+                        : <span className="text-yellow-400 font-semibold">⭐ {movie.rating || "N/A"}</span>
+                      }
+                    </td>
+
+                    {/* Translator */}
+                    <td className="px-4 py-3 text-blue-400 text-xs max-w-[100px]">
+                      {editingId === movie._id
+                        ? <input className={ic} placeholder="Translator" value={editForm.translatorName}
+                            onChange={(e) => setEditForm((p) => ({ ...p, translatorName: e.target.value }))} />
+                        : <span className="truncate block">{movie.translatorName || "—"}</span>
+                      }
                     </td>
 
                     {/* Views */}
@@ -217,34 +213,33 @@ const Movies = () => {
                       <div className="flex items-center justify-center gap-2">
                         {editingId === movie._id ? (
                           <>
-                            <button
-                              onClick={() => saveEdit(movie._id)}
-                              disabled={savingEdit}
-                              className="p-1.5 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 text-green-400 rounded-lg transition-all disabled:opacity-50"
-                            >
+                            <button onClick={() => saveEdit(movie._id)} disabled={savingEdit}
+                              className="p-1.5 bg-green-600/20 hover:bg-green-600/40 border
+                                         border-green-500/30 text-green-400 rounded-lg transition-all
+                                         disabled:opacity-50">
                               {savingEdit ? <Loader size={14} className="animate-spin" /> : <Check size={14} />}
                             </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="p-1.5 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 text-gray-400 rounded-lg transition-all"
-                            >
+                            <button onClick={cancelEdit}
+                              className="p-1.5 bg-gray-700/50 hover:bg-gray-700 border border-gray-600
+                                         text-gray-400 rounded-lg transition-all">
                               <X size={14} />
                             </button>
                           </>
                         ) : (
                           <>
-                            <button
-                              onClick={() => startEdit(movie)}
-                              className="p-1.5 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 rounded-lg transition-all"
-                            >
+                            <button onClick={() => startEdit(movie)}
+                              className="p-1.5 bg-blue-600/20 hover:bg-blue-600/40 border
+                                         border-blue-500/30 text-blue-400 rounded-lg transition-all">
                               <Pencil size={14} />
                             </button>
-                            <button
-                              onClick={() => handleDelete(movie._id)}
+                            <button onClick={() => handleDelete(movie._id)}
                               disabled={deletingId === movie._id}
-                              className="p-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 rounded-lg transition-all disabled:opacity-50"
-                            >
-                              {deletingId === movie._id ? <Loader size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                              className="p-1.5 bg-red-600/20 hover:bg-red-600/40 border
+                                         border-red-500/30 text-red-400 rounded-lg transition-all
+                                         disabled:opacity-50">
+                              {deletingId === movie._id
+                                ? <Loader size={14} className="animate-spin" />
+                                : <Trash2 size={14} />}
                             </button>
                           </>
                         )}
@@ -260,21 +255,15 @@ const Movies = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-3 px-5 py-4 border-t border-gray-700/40">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all"
-            >
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all">
               <ChevronLeft size={16} />
             </button>
             <span className="text-gray-300 text-sm font-medium px-3 py-1 bg-gray-800 rounded-lg">
               {page} / {totalPages}
             </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all"
-            >
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all">
               <ChevronRight size={16} />
             </button>
           </div>
