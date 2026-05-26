@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Heart, Clock, X, ChevronDown, Film, Menu } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { Search, Heart, Clock, X, ChevronDown, Film, Menu, Sun, Moon } from "lucide-react";
+import { useApp }   from "../context/AppContext";
+import { useTheme } from "../context/ThemeContext";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
@@ -29,6 +30,7 @@ const Navbar = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { favorites } = useApp();
+  const { dark, toggle: toggleTheme } = useTheme();
 
   // Scroll effect
   useEffect(() => {
@@ -300,6 +302,16 @@ const Navbar = () => {
             aria-label="Watch History">
             <Clock size={20} />
           </Link>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            title={dark ? "Light mode" : "Dark mode"}
+          >
+            {dark ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
 
           {/* Mobile menu toggle */}
           <button onClick={() => setShowMobileMenu(!showMobileMenu)}

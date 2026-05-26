@@ -1,2 +1,4 @@
-instead of that "like" button add the button to watch full movie the real movie becouse the div there will be for the trailer from youtube 
-"Translated by " remove this word at the begining of the name for translator and the frst letter for translator to be capital letter and before the start of description be the word "story" to indicate that it is description it will be like that way the "Related Movies" word is written then it will drop red shadow which is not more at the bottom of the word under the div of the trailer or movies remove the views indicator for client or duration and also add download button
+then let make other last improvement make a link in admin to see all movie in the card like that of client the implement dark mode and light mode trigger button and functionality even in admin make it
+
+
+and also make a button to client at footer in Navigation to go to /admin then on admin implement login system and sign up to go to it to make it secure

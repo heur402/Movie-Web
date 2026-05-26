@@ -1,7 +1,8 @@
 // src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AppProvider } from "./context/AppContext";
+import { AppProvider }   from "./context/AppContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Navbar        from "./components/Navbar";
 import HomePage      from "./pages/HomePage";
 import ExplorePage   from "./pages/ExplorePage";
@@ -16,33 +17,35 @@ import Privacy       from "./pages/Privacy";
 import AdminDashboard from "./admin/AdminDashboard";
 
 const App = () => (
-  <AppProvider>
-    <Router>
-      <Navbar />
-      <Routes>
-        {/* Public */}
-        <Route path="/"          element={<HomePage />}      />
-        <Route path="/explore"   element={<ExplorePage />}   />
-        <Route path="/favorites" element={<FavoritesPage />} />
-        <Route path="/history"   element={<HistoryPage />}   />
-        <Route path="/movies"    element={<Movies />}        />
+  <ThemeProvider>
+    <AppProvider>
+      <Router>
+        <Navbar />
+        <Routes>
+          {/* Public */}
+          <Route path="/"          element={<HomePage />}      />
+          <Route path="/explore"   element={<ExplorePage />}   />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/history"   element={<HistoryPage />}   />
+          <Route path="/movies"    element={<Movies />}        />
 
-        {/* Movie detail page — trailer + info */}
-        <Route path="/movie/:id" element={<MovieWatch />}    />
+          {/* Movie detail page — trailer + info */}
+          <Route path="/movie/:id" element={<MovieWatch />}    />
 
-        {/* Full movie streaming page */}
-        <Route path="/watch/:id" element={<WatchPage />}     />
+          {/* Full movie streaming page */}
+          <Route path="/watch/:id" element={<WatchPage />}     />
 
-        {/* Info pages */}
-        <Route path="/about"   element={<About />}   />
-        <Route path="/terms"   element={<Terms />}   />
-        <Route path="/privacy" element={<Privacy />} />
+          {/* Info pages */}
+          <Route path="/about"   element={<About />}   />
+          <Route path="/terms"   element={<Terms />}   />
+          <Route path="/privacy" element={<Privacy />} />
 
-        {/* Admin */}
-        <Route path="/admin/*" element={<AdminDashboard />} />
-      </Routes>
-    </Router>
-  </AppProvider>
+          {/* Admin */}
+          <Route path="/admin/*" element={<AdminDashboard />} />
+        </Routes>
+      </Router>
+    </AppProvider>
+  </ThemeProvider>
 );
 
 export default App;
