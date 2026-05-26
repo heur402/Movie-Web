@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, Heart, Star, Clock, User } from "lucide-react";
+import { Play, Heart, Star, User } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 const MovieCard = ({ movie, index = 0 }) => {
@@ -121,14 +121,9 @@ const MovieCard = ({ movie, index = 0 }) => {
         {movie.translatorName && (
           <div className="flex items-center gap-1 mt-1.5">
             <User size={9} className="text-blue-400 shrink-0" />
-            <span className="text-blue-400 text-xs truncate">{movie.translatorName}</span>
-          </div>
-        )}
-
-        {movie.duration && (
-          <div className="flex items-center gap-1 mt-1">
-            <Clock size={9} className="text-gray-500" />
-            <span className="text-gray-500 text-xs">{movie.duration}</span>
+            <span className="text-blue-400 text-xs truncate">
+              {movie.translatorName.charAt(0).toUpperCase() + movie.translatorName.slice(1)}
+            </span>
           </div>
         )}
       </div>
