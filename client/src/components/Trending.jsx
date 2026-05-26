@@ -1,126 +1,232 @@
+// src/components/Trending.jsx — Hero banner with featured trending movie
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
-import MovieCard from "../components/MovieCard";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Info, Star, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useApp } from "../context/AppContext";
+
+const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
 const Trending = () => {
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [activeMovie, setActiveMovie] = useState(null);
-  const [hoveredMovie, setHoveredMovie] = useState(null);
+  const [movies, setMovies] = useState([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toggleFavorite, isFavorite } = useApp();
 
-  // Fetch trending movies from API
   useEffect(() => {
-    const fetchTrendingMovies = async () => {
+    const fetchTrending = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/trending");
+        const res = await fetch(`${API}/api/trending`);
         const data = await res.json();
-        setTrendingMovies(data);
-        if (data.length > 0) {
-          setActiveMovie(data[0]);
-        }
+        setMovies(data);
       } catch (err) {
-        console.error("Failed to fetch trending movies:", err);
+        console.error("Failed to fetch trending:", err);
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchTrendingMovies();
+    fetchTrending();
   }, []);
 
-  const handleMouseEnter = (movie) => {
-    setHoveredMovie(movie);
-    setActiveMovie(movie);
-  };
+  // Auto-advance every 6s
+  useEffect(() => {
+    if (movies.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveIdx((i) => (i + 1) % movies.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [movies.length]);
 
-  const handleMouseLeave = () => {
-    setHoveredMovie(null);
-  };
+  const active = movies[activeIdx];
 
-  const handlePlay = () => {
-    if (activeMovie) {
-      navigate(`/movie/${activeMovie._id}`);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="relative h-[85vh] bg-gray-950 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  return (
-    <div className="bg-gray-950 text-white bg-cover bg-center bg-no-repeat md:bg-fixed"
-      style={{
-        backgroundImage:
-          "url('https://image.tmdb.org/t/p/original/8bcoRX3hQRHufLPSDREdvr3YMXx.jpg')",
-      }}
-    >
-      {/* Navbar Section */}
-      <Navbar />
-
-      {/* Trending Section */}
-      <div className="relative flex flex-col lg:flex-row items-center justify-between px-4 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12 lg:px-12 lg:py-16 xl:px-16 xl:py-20">
-        
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-linear-to-br from-black/80 via-black/60 to-black/90"></div>
-
-        <div className="max-sm:mt-20 sm:max-md:mt-30 md:mt-20 lg:mt-120"></div>
-
-        {/* Content Section */}
-        <div className="relative z-10 w-full lg:w-1/2 space-y-4 sm:space-y-5 md:space-y-6 mb-6 sm:mb-8 lg:mb-0 lg:pr-8 xl:pr-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
-            {activeMovie?.title}
-          </h2>
-          <p className="text-gray-300 mb-10 text-sm sm:text-base md:text-lg lg:text-xl max-w-md sm:max-w-lg md:max-w-xl leading-relaxed">
-            {activeMovie?.description}
-          </p>
-        </div>
-
-        {/* Cards Section */}
-        <div className="relative z-10 w-full lg:w-auto mb-10">
-          <div className="flex items-center justify-center gap-3 sm:gap-2 md:gap-2 lg:gap-2 xl:gap-2 relative">
-            
-            {/* Left Card */}
-            {trendingMovies[1] && (
-              <div 
-                className={`transform transition-all duration-500 ease-out ${
-                  hoveredMovie?._id === trendingMovies[1]._id 
-                    ? "scale-110 z-20 -translate-x-2 sm:-translate-x-3 md:-translate-x-4 lg:-translate-x-6" 
-                    : "scale-95 opacity-80 z-10 -translate-x-4 sm:-translate-x-6 md:-translate-x-8 lg:-translate-x-12"
-                } w-32 sm:w-36 md:w-44 lg:w-52 xl:w-60 2xl:w-64 cursor-pointer`}
-                onMouseEnter={() => handleMouseEnter(trendingMovies[1])}
-                onMouseLeave={handleMouseLeave}
-              >
-                <MovieCard movie={trendingMovies[1]} />
-              </div>
-            )}
-
-            {/* Center Card (Main) */}
-            {trendingMovies[0] && (
-              <div 
-                className={`transform transition-all duration-500 ease-out ${
-                  hoveredMovie?._id === trendingMovies[0]._id 
-                    ? "scale-125 z-30 translate-y-0" 
-                    : "scale-105 opacity-90 z-20 -translate-y-2 sm:-translate-y-3 md:-translate-y-4"
-                } w-36 sm:w-44 md:w-52 lg:w-60 xl:w-72 2xl:w-80 cursor-pointer`}
-                onMouseEnter={() => handleMouseEnter(trendingMovies[0])}
-                onMouseLeave={handleMouseLeave}
-              >
-                <MovieCard movie={trendingMovies[0]} />
-              </div>
-            )}
-
-            {/* Right Card */}
-            {trendingMovies[2] && (
-              <div 
-                className={`transform transition-all duration-500 ease-out ${
-                  hoveredMovie?._id === trendingMovies[2]._id 
-                    ? "scale-110 z-20 translate-x-2 sm:translate-x-3 md:translate-x-4 lg:translate-x-6" 
-                    : "scale-95 opacity-80 z-10 translate-x-4 sm:translate-x-6 md:translate-x-8 lg:translate-x-12"
-                } w-32 sm:w-36 md:w-44 lg:w-52 xl:w-60 2xl:w-64 cursor-pointer`}
-                onMouseEnter={() => handleMouseEnter(trendingMovies[2])}
-                onMouseLeave={handleMouseLeave}
-              >
-                <MovieCard movie={trendingMovies[2]} />
-              </div>
-            )}
-          </div>
+  if (!active) {
+    return (
+      <div className="relative h-[85vh] bg-gray-950 flex items-center justify-center">
+        <div className="text-center text-gray-400">
+          <p className="text-xl">No trending movies yet</p>
+          <p className="text-sm mt-2">Add some from the admin panel</p>
         </div>
       </div>
+    );
+  }
+
+  const bgImage = active.image || active.posterUrls?.[0];
+  const avgRating =
+    active.avgRating ||
+    (active.ratings?.length > 0
+      ? (active.ratings.reduce((s, r) => s + (r.score || r), 0) / active.ratings.length).toFixed(1)
+      : active.rating || "N/A");
+
+  return (
+    <div className="relative h-[85vh] min-h-[500px] overflow-hidden">
+      {/* Background */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeIdx}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0"
+        >
+          {bgImage ? (
+            <img
+              src={bgImage}
+              alt={active.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black" />
+          )}
+          {/* Cinematic overlays */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Content */}
+      <div className="relative z-10 h-full flex items-center">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 w-full pt-16">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIdx}
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-2xl"
+            >
+              {/* Trending badge */}
+              <div className="flex items-center gap-2 mb-4">
+                <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  🔥 Trending #{activeIdx + 1}
+                </span>
+                {active.genre && (
+                  <span className="bg-white/10 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/20">
+                    {active.genre}
+                  </span>
+                )}
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight mb-4 drop-shadow-2xl">
+                {active.title}
+              </h1>
+
+              {/* Meta */}
+              <div className="flex items-center gap-4 mb-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                  <span className="text-yellow-400 font-bold">{avgRating}</span>
+                </div>
+                {active.year && <span className="text-gray-300">{active.year}</span>}
+                {active.duration && <span className="text-gray-300">{active.duration}</span>}
+              </div>
+
+              <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 line-clamp-3 max-w-xl">
+                {active.description}
+              </p>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate(`/movie/${active._id}`)}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold px-8 py-3.5 rounded-xl shadow-2xl shadow-red-600/40 transition-colors"
+                >
+                  <Play size={18} fill="white" />
+                  Watch Now
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => toggleFavorite(active)}
+                  className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold border transition-all ${
+                    isFavorite(active._id)
+                      ? "bg-red-600/20 border-red-500 text-red-400"
+                      : "bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  }`}
+                >
+                  <Heart size={18} className={isFavorite(active._id) ? "fill-red-500" : ""} />
+                  {isFavorite(active._id) ? "Saved" : "Save"}
+                </motion.button>
+
+                <Link
+                  to={`/movie/${active._id}`}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-6 py-3.5 rounded-xl transition-all backdrop-blur-sm"
+                >
+                  <Info size={18} />
+                  More Info
+                </Link>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Thumbnail strip + navigation */}
+      {movies.length > 1 && (
+        <div className="absolute bottom-8 right-6 md:right-10 z-10 flex items-center gap-3">
+          <button
+            onClick={() => setActiveIdx((i) => (i - 1 + movies.length) % movies.length)}
+            className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white transition-all backdrop-blur-sm"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div className="flex gap-2">
+            {movies.slice(0, 5).map((m, i) => (
+              <button
+                key={m._id}
+                onClick={() => setActiveIdx(i)}
+                className={`relative overflow-hidden rounded-lg transition-all duration-300 ${
+                  i === activeIdx
+                    ? "w-16 h-20 ring-2 ring-red-500 opacity-100"
+                    : "w-12 h-16 opacity-50 hover:opacity-80"
+                }`}
+              >
+                <img
+                  src={m.image || m.posterUrls?.[0] || "https://via.placeholder.com/48x64?text=?"}
+                  alt={m.title}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setActiveIdx((i) => (i + 1) % movies.length)}
+            className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-white transition-all backdrop-blur-sm"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Progress dots */}
+      {movies.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          {movies.slice(0, 5).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(i)}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                i === activeIdx ? "w-8 bg-red-500" : "w-2 bg-white/30"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,33 +1,61 @@
+// src/components/MovieCategories.jsx — Genre rows with horizontal scroll
 import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import MovieCard from "./MovieCard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import SkeletonCard from "./SkeletonCard";
 
-const MovieCategory = () => {
+const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
+
+const MovieCategories = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/movies");
+        const res = await fetch(`${API}/api/movies`);
         const data = await res.json();
         setMovies(data);
-      } catch (error) {
-        console.error("Failed to fetch movies:", error);
+      } catch (err) {
+        console.error("Failed to fetch movies:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchMovies();
   }, []);
 
-  if (loading) return <p className="text-white p-6">Loading movies...</p>;
-  if (movies.length === 0) return <p className="text-white p-6">No movies found.</p>;
+  if (loading) {
+    return (
+      <div className="px-6 py-10 space-y-12">
+        {[1, 2].map((i) => (
+          <div key={i}>
+            <div className="h-6 w-32 bg-gray-800 rounded animate-pulse mb-6" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {Array(6).fill(0).map((_, j) => <SkeletonCard key={j} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-  // ✅ Group movies by genre
-  const groupedMovies = movies.reduce((acc, movie) => {
-    const genres = movie.genre ? movie.genre.split(/[,/]/).map((g) => g.trim()) : ["Other"];
+  if (movies.length === 0) {
+    return (
+      <div className="px-6 py-20 text-center text-gray-400">
+        <p className="text-xl">No movies found</p>
+        <p className="text-sm mt-2">Add movies from the admin panel</p>
+      </div>
+    );
+  }
+
+  // Group by genre
+  const grouped = movies.reduce((acc, movie) => {
+    const genres = movie.genre
+      ? movie.genre.split(/[,/]/).map((g) => g.trim()).filter(Boolean)
+      : ["Other"];
     genres.forEach((genre) => {
       if (!acc[genre]) acc[genre] = [];
       acc[genre].push(movie);
@@ -36,115 +64,93 @@ const MovieCategory = () => {
   }, {});
 
   return (
-    <div className="bg-gray-950/15 text-white min-h-screen px-6 py-12">
-      {Object.keys(groupedMovies).map((genre) => (
-        <MovieCategoryRow 
-          key={genre} 
-          genre={genre} 
-          movies={groupedMovies[genre]} 
-        />
+    <div className="py-8 space-y-12">
+      {Object.entries(grouped).map(([genre, genreMovies], idx) => (
+        <CategoryRow key={genre} genre={genre} movies={genreMovies} index={idx} />
       ))}
     </div>
   );
 };
 
-// Scroll Button Component for top position
-const ScrollButton = ({ direction, visible, onClick, genre }) => {
-  if (!visible) return null;
+const CategoryRow = ({ genre, movies, index }) => {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const isLeft = direction === 'left';
-  const Icon = isLeft ? ChevronLeft : ChevronRight;
-  const ariaLabel = `Scroll ${genre} ${direction}`;
-
-  return (
-    <button
-      onClick={onClick}
-      className="bg-black/70 hover:bg-black/90 text-white p-2 rounded-lg transition-all duration-200 opacity-100 ml-2"
-      aria-label={ariaLabel}
-    >
-      <Icon className="w-5 h-5" />
-    </button>
-  );
-};
-
-// Separate component for each movie category row
-const MovieCategoryRow = ({ genre, movies }) => {
-  const scrollContainerRef = useRef(null);
-  const [showLeftButton, setShowLeftButton] = useState(false);
-  const [showRightButton, setShowRightButton] = useState(true);
-
-  const checkScrollButtons = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      setShowLeftButton(container.scrollLeft > 0);
-      setShowRightButton(
-        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
-      );
-    }
-  };
-
-  const scroll = (direction) => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const scrollAmount = container.clientWidth * 0.8;
-      container.scrollBy({
-        left: direction === 'right' ? scrollAmount : -scrollAmount,
-        behavior: 'smooth'
-      });
-    }
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
   };
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', checkScrollButtons);
-      checkScrollButtons(); // Initial check
-      
-      return () => container.removeEventListener('scroll', checkScrollButtons);
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", checkScroll);
+    checkScroll();
+    return () => el.removeEventListener("scroll", checkScroll);
   }, []);
 
-  return (
-    <div className="mb-12">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <h2 className="text-2xl font-semibold text-pink-400">{genre}</h2>
-        </div>
-        
-        <div className="flex">
-          <ScrollButton
-            direction="left"
-            visible={showLeftButton}
-            onClick={() => scroll('left')}
-            genre={genre}
-          />
-          <ScrollButton
-            direction="right"
-            visible={showRightButton}
-            onClick={() => scroll('right')}
-            genre={genre}
-          />
-        </div>
-      </div>
-      
-      <div className="w-14 border-b-4 border-red-500 mb-8"></div>
+  const scroll = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "right" ? el.clientWidth * 0.75 : -el.clientWidth * 0.75, behavior: "smooth" });
+  };
 
-      <div className="relative group">
-        {/* Movie Cards Container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex overflow-x-auto scrollbar-hide gap-6 pb-4 scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {movies.map((movie) => (
-            <div key={movie._id} className="shrink-0 w-48">
-              <MovieCard movie={movie} />
-            </div>
-          ))}
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay: index * 0.05 }}
+      className="px-6 md:px-10"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-red-500 rounded-full" />
+          <h2 className="text-white text-xl font-bold">{genre}</h2>
+          <span className="text-gray-500 text-sm">({movies.length})</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/explore?genre=${encodeURIComponent(genre)}`}
+            className="flex items-center gap-1 text-gray-400 hover:text-red-400 text-sm transition-colors"
+          >
+            See all <ArrowRight size={14} />
+          </Link>
+          <button
+            onClick={() => scroll("left")}
+            disabled={!canScrollLeft}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            disabled={!canScrollRight}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
-    </div>
+
+      {/* Scroll container */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {movies.map((movie, i) => (
+          <div key={movie._id} className="shrink-0 w-40 sm:w-44 md:w-48">
+            <MovieCard movie={movie} index={i} />
+          </div>
+        ))}
+      </div>
+    </motion.section>
   );
 };
 
-export default MovieCategory;
+export default MovieCategories;

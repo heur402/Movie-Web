@@ -1,229 +1,176 @@
-import { useState, useEffect } from "react";
+// src/admin/component/AddMovie.jsx — with Cloudinary upload support
+import { useState } from "react";
+import { Upload, X, Image, Film, Link as LinkIcon, Loader } from "lucide-react";
 
-const AddMovie = () => {
+const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
-  const [movies, setMovies] = useState([]);
-  const [newMovie, setNewMovie] = useState({
-    title: "",
-    year: "",
-    rating: "",
-    genre: "",
-    image: "",
-    description: "",
-    trailer: "",
+const GENRES = ["Action","Drama","Comedy","Horror","Romance","Sci-Fi","Adventure","Thriller","Animation","Indian","Others"];
+
+const inputClass =
+  "bg-gray-900/80 border border-gray-700/60 text-white placeholder-gray-500 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all text-sm w-full";
+
+const AddMovie = ({ onMovieAdded }) => {
+  const [form, setForm] = useState({
+    title: "", year: "", rating: "", genre: "",
+    image: "", trailer: "", description: "", duration: "",
   });
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState("");
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const moviesPerPage = 5;
+  const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
-  // Fetch movies from DB
-  useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/movies");
-        const data = await res.json();
-        setMovies(data);
-      } catch (err) {
-        console.error("Failed to fetch movies:", err);
-      }
-    };
-    fetchMovies();
-  }, []);
+  const handlePosterFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPosterFile(file);
+    setPosterPreview(URL.createObjectURL(file));
+    setForm((p) => ({ ...p, image: "" })); // clear URL if file chosen
+  };
 
-  const handleAdd = async () => {
-    if (!newMovie.title || !newMovie.genre) return alert("Please fill all required fields.");
-
+  const uploadPosterToCloudinary = async () => {
+    if (!posterFile) return form.image;
+    setUploadingPoster(true);
     try {
-      const res = await fetch("http://localhost:5000/api/movies", {
+      const fd = new FormData();
+      fd.append("image", posterFile);
+      const res = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      return url;
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.title || !form.genre) {
+      setMessage({ type: "error", text: "Title and genre are required." });
+      return;
+    }
+    setSubmitting(true);
+    setMessage({ type: "", text: "" });
+    try {
+      // Upload poster to Cloudinary if file selected
+      const imageUrl = await uploadPosterToCloudinary();
+
+      const res = await fetch(`${API}/api/movies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newMovie),
+        body: JSON.stringify({ ...form, image: imageUrl || form.image }),
       });
       if (!res.ok) throw new Error("Failed to add movie");
-
-      const savedMovie = await res.json();
-      setMovies([...movies, savedMovie]);
-      setNewMovie({
-        title: "",
-        year: "",
-        rating: "",
-        genre: "",
-        image: "",
-        trailer: "",
-        description: "",
-      });
+      const saved = await res.json();
+      setMessage({ type: "success", text: `"${saved.title}" added successfully!` });
+      setForm({ title: "", year: "", rating: "", genre: "", image: "", trailer: "", description: "", duration: "" });
+      setPosterFile(null);
+      setPosterPreview("");
+      onMovieAdded?.(saved);
     } catch (err) {
-      alert(err.message);
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setSubmitting(false);
     }
   };
-
-
-
-  const handleDelete = async (_id) => {
-    if (!_id) return alert("Invalid movie ID");
-    
-    try {
-      const res = await fetch(`http://localhost:5000/api/movies/${_id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete movie");
-      setMovies(movies.filter((m) => m._id !== _id));
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-    const inputClass =
-    "bg-black/30 border border-gray-700 text-white placeholder-gray-400 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all";
-
 
   return (
-    <div>
-    {/* Add new movie form */}
-      <div className="bg-linear-to-b from-gray-900 via-black to-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-red-900/40 backdrop-blur-md transition-all duration-500 hover:shadow-red-500/20 hover:border-red-500/40">
-            <h3 className="text-2xl font-bold mb-5 text-center tracking-wider text-red-500 drop-shadow-lg">
-                Add New Movie
-            </h3>
+    <div className="bg-gradient-to-b from-gray-900 to-black border border-gray-700/40 rounded-2xl p-6 shadow-2xl">
+      <h3 className="text-xl font-bold text-red-400 mb-6 flex items-center gap-2">
+        <Film size={20} /> Add New Movie
+      </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {/* Movie details */}
-            <input
-                type="text"
-                placeholder="Title"
-                className={inputClass}
-                value={newMovie.title}
-                onChange={(e) => setNewMovie({ ...newMovie, title: e.target.value })}
-            />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <input className={inputClass} placeholder="Title *" value={form.title} onChange={(e) => set("title", e.target.value)} required />
 
-            <input
-                list="genres"
-                type="text"
-                placeholder="Genre"
-                className={inputClass}
-                value={newMovie.genre}
-                onChange={(e) => setNewMovie({ ...newMovie, genre: e.target.value })}
-            />
-            <datalist id="genres">
-                <option value="Action" />
-                <option value="Drama" />
-                <option value="Comedy" />
-                <option value="Horror" />
-                <option value="Romance" />
-                <option value="Sci-Fi" />
-                <option value="Adventure" />
-                <option value="Thriller" />
-                <option value="Others" />
-            </datalist>
+          <select className={inputClass} value={form.genre} onChange={(e) => set("genre", e.target.value)} required>
+            <option value="">Select Genre *</option>
+            {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
 
-            <input
-                type="text"
-                placeholder="Year"
-                className={inputClass}
-                value={newMovie.year}
-                onChange={(e) => setNewMovie({ ...newMovie, year: e.target.value })}
-            />
+          <input className={inputClass} placeholder="Year (e.g. 2024)" value={form.year} onChange={(e) => set("year", e.target.value)} />
+          <input className={inputClass} placeholder="Rating (e.g. 8.5)" value={form.rating} onChange={(e) => set("rating", e.target.value)} />
+          <input className={inputClass} placeholder="Duration (e.g. 2h 15m)" value={form.duration} onChange={(e) => set("duration", e.target.value)} />
+          <input className={inputClass} placeholder="Trailer URL (YouTube)" value={form.trailer} onChange={(e) => set("trailer", e.target.value)} />
+        </div>
 
-            <input
-                type="text"
-                placeholder="Rating"
-                className={inputClass}
-                value={newMovie.rating}
-                onChange={(e) => setNewMovie({ ...newMovie, rating: e.target.value })}
-            />
+        <textarea
+          className={inputClass}
+          placeholder="Description"
+          rows={3}
+          value={form.description}
+          onChange={(e) => set("description", e.target.value)}
+        />
 
-            <textarea
-                name="description"
-                value={newMovie.description}
-                onChange={(e) => setNewMovie({ ...newMovie, description: e.target.value })}
-                placeholder="Enter movie description"
-                className={inputClass}
-                rows="3"
-            />
+        {/* Poster upload */}
+        <div className="space-y-2">
+          <label className="text-sm text-gray-400 font-medium">Poster Image</label>
+          <div className="flex gap-3 flex-wrap items-start">
+            {/* File upload */}
+            <label className="flex items-center gap-2 px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-xl cursor-pointer transition-all text-sm font-medium">
+              <Upload size={16} />
+              {posterFile ? "Change file" : "Upload poster"}
+              <input type="file" accept="image/*" className="hidden" onChange={handlePosterFile} />
+            </label>
 
-            {/* Trailer input */}
-            <div className="flex flex-col gap-2">
-                <label className="text-sm text-gray-300">Trailer</label>
-                <div className="flex items-center gap-2">
-                <input
-                    type="text"
-                    placeholder="Paste trailer URL or choose file"
-                    className={inputClass + " flex-1"}
-                    value={newMovie.trailer}
-                    onChange={(e) => setNewMovie({ ...newMovie, trailer: e.target.value })}
+            {/* OR URL */}
+            <div className="flex-1 min-w-48 relative">
+              <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                className={inputClass + " pl-8"}
+                placeholder="Or paste image URL"
+                value={form.image}
+                onChange={(e) => { set("image", e.target.value); setPosterFile(null); setPosterPreview(""); }}
+              />
+            </div>
+
+            {/* Preview */}
+            {(posterPreview || form.image) && (
+              <div className="relative">
+                <img
+                  src={posterPreview || form.image}
+                  alt="Preview"
+                  className="w-16 h-24 object-cover rounded-lg border border-gray-700"
                 />
-                <label className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer transition-all">
-                    Choose
-                    <input
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                        const videoUrl = URL.createObjectURL(file);
-                        setNewMovie({ ...newMovie, trailer: videoUrl });
-                        }
-                    }}
-                    />
-                </label>
-                </div>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => { setPosterFile(null); setPosterPreview(""); set("image", ""); }}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center"
+                >
+                  <X size={10} className="text-white" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Poster input */}
-            <div className="flex flex-col gap-2 col-span-1 sm:col-span-2 md:col-span-3">
-                <label className="text-sm text-gray-300">Poster</label>
-                <div className="flex items-center gap-2">
-                <input
-                    type="text"
-                    placeholder="Paste image URL or choose file"
-                    className={inputClass + " flex-1"}
-                    value={newMovie.image}
-                    onChange={(e) => setNewMovie({ ...newMovie, image: e.target.value })}
-                />
-                <label className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer transition-all">
-                    Choose
-                    <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                        const imageUrl = URL.createObjectURL(file);
-                        setNewMovie({ ...newMovie, image: imageUrl });
-                        }
-                    }}
-                    />
-                </label>
-                </div>
-                <div className="flex flex-wrap justify-between">
-                {newMovie.image && (
-                    <img
-                    src={newMovie.image}
-                    alt="Preview"
-                    className="mt-2 w-32 h-32 object-cover rounded-lg border border-gray-700"
-                    />
-                )}
-                {newMovie.trailer && (
-                    <video
-                    src={newMovie.trailer}
-                    controls
-                    className="mt-2 rounded-lg w-48 h-28 border border-gray-700"
-                    />
-                )}
-                </div>
-            </div>
-            </div>
+        {/* Message */}
+        {message.text && (
+          <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+            message.type === "success"
+              ? "bg-green-500/10 border border-green-500/30 text-green-400"
+              : "bg-red-500/10 border border-red-500/30 text-red-400"
+          }`}>
+            {message.text}
+          </div>
+        )}
 
-            <button
-            onClick={handleAdd}
-            className="mt-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-red-500/40 transition-all duration-300 transform hover:scale-105"
-            >
-            + Add Movie
-            </button>
-      </div>
+        <button
+          type="submit"
+          disabled={submitting || uploadingPoster}
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-red-600/30"
+        >
+          {(submitting || uploadingPoster) && (
+            <Loader size={16} className="animate-spin" />
+          )}
+          {uploadingPoster ? "Uploading poster..." : submitting ? "Adding..." : "+ Add Movie"}
+        </button>
+      </form>
     </div>
-  )
-}
+  );
+};
 
-export default AddMovie
+export default AddMovie;

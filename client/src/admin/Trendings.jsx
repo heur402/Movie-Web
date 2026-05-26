@@ -1,324 +1,280 @@
+// src/admin/Trendings.jsx — Manage trending movies with Cloudinary upload
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Upload, X, Loader, Plus } from "lucide-react";
+
+const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
+const PER_PAGE = 5;
+
+const GENRES = ["Action","Drama","Comedy","Horror","Romance","Sci-Fi","Adventure","Thriller","Animation","Indian","Others"];
+
+const inputClass =
+  "bg-gray-900/80 border border-gray-700/60 text-white placeholder-gray-500 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all text-sm w-full";
 
 const Trendings = () => {
   const [trendings, setTrendings] = useState([]);
-  const [newTrending, setNewTrending] = useState({
-    title: "",
-    year: "",
-    rating: "",
-    genre: "",
-    image: "",
-    description: "",
-    trailer: "",
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const [form, setForm] = useState({
+    title: "", year: "", rating: "", genre: "",
+    image: "", trailer: "", description: "",
   });
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState("");
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const moviesPerPage = 3;
+  const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
-  // Fetch trending movies from DB
   useEffect(() => {
     const fetchTrendings = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/trending");
-        const data = await res.json();
-        setTrendings(data);
+        const res = await fetch(`${API}/api/trending`);
+        setTrendings(await res.json());
       } catch (err) {
-        console.error("Failed to fetch trendings:", err);
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchTrendings();
   }, []);
 
-  const handleAdd = async () => {
-    if (!newTrending.title || !newTrending.genre) return alert("Please fill all required fields.");
+  const handlePosterFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPosterFile(file);
+    setPosterPreview(URL.createObjectURL(file));
+    set("image", "");
+  };
 
+  const uploadPoster = async () => {
+    if (!posterFile) return form.image;
+    setUploadingPoster(true);
     try {
-      const res = await fetch("http://localhost:5000/api/trending", {
+      const fd = new FormData();
+      fd.append("image", posterFile);
+      const res = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      return url;
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!form.title || !form.genre) {
+      setMessage({ type: "error", text: "Title and genre are required." });
+      return;
+    }
+    setSubmitting(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const imageUrl = await uploadPoster();
+      const res = await fetch(`${API}/api/trending`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTrending),
+        body: JSON.stringify({ ...form, image: imageUrl || form.image }),
       });
-      if (!res.ok) throw new Error("Failed to add trending movie");
-
-      const savedMovie = await res.json();
-      setTrendings([...trendings, savedMovie]);
-      setNewTrending({
-        title: "",
-        year: "",
-        rating: "",
-        genre: "",
-        image: "",
-        trailer: "",
-        description: "",
-      });
+      if (!res.ok) throw new Error("Failed to add");
+      const saved = await res.json();
+      setTrendings((prev) => [saved, ...prev]);
+      setForm({ title: "", year: "", rating: "", genre: "", image: "", trailer: "", description: "" });
+      setPosterFile(null);
+      setPosterPreview("");
+      setMessage({ type: "success", text: `"${saved.title}" added to trending!` });
     } catch (err) {
-      alert(err.message);
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleDelete = async (_id) => {
-    if (!_id) return alert("Invalid movie ID");
-    
+  const handleDelete = async (id) => {
+    if (!confirm("Remove from trending?")) return;
+    setDeletingId(id);
     try {
-      const res = await fetch(`http://localhost:5000/api/trending/${_id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete movie");
-      setTrendings(trendings.filter((m) => m._id !== _id));
-    } catch (err) {
-      alert(err.message);
+      await fetch(`${API}/api/trending/${id}`, { method: "DELETE" });
+      setTrendings((prev) => prev.filter((m) => m._id !== id));
+    } catch {
+      alert("Delete failed");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  // Pagination logic
-  const indexOfLastMovie = currentPage * moviesPerPage;
-  const indexOfFirstMovie = indexOfLastMovie - moviesPerPage;
-  const currentTrendings = trendings.slice(indexOfFirstMovie, indexOfLastMovie);
-  const totalPages = Math.ceil(trendings.length / moviesPerPage);
-
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-  
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  const inputClass =
-    "bg-black/30 border border-gray-700 text-white placeholder-gray-400 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all";
+  const totalPages = Math.ceil(trendings.length / PER_PAGE);
+  const paginated = trendings.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4 text-white">Manage Trending Movies</h2>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-white">Manage Trending</h2>
 
-      {/* Add Movie Form */}
-      <div className="bg-linear-to-b from-gray-900 via-black to-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-red-900/40 backdrop-blur-md transition-all duration-500 hover:shadow-red-500/20 hover:border-red-500/40">
-        <h3 className="text-2xl font-bold mb-5 text-center tracking-wider text-red-500 drop-shadow-lg">
-          Add New Trending Movie
+      {/* Add Form */}
+      <div className="bg-gradient-to-b from-gray-900 to-black border border-gray-700/40 rounded-2xl p-6 shadow-2xl">
+        <h3 className="text-lg font-bold text-red-400 mb-5 flex items-center gap-2">
+          <Plus size={18} /> Add Trending Movie
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {/* Movie details */}
-          <input
-            type="text"
-            placeholder="Title"
-            className={inputClass}
-            value={newTrending.title}
-            onChange={(e) => setNewTrending({ ...newTrending, title: e.target.value })}
-          />
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <input className={inputClass} placeholder="Title *" value={form.title} onChange={(e) => set("title", e.target.value)} required />
 
-          <input
-            list="genres"
-            type="text"
-            placeholder="Genre"
-            className={inputClass}
-            value={newTrending.genre}
-            onChange={(e) => setNewTrending({ ...newTrending, genre: e.target.value })}
-          />
-          <datalist id="genres">
-            <option value="Action" />
-            <option value="Drama" />
-            <option value="Comedy" />
-            <option value="Horror" />
-            <option value="Romance" />
-            <option value="Sci-Fi" />
-            <option value="Adventure" />
-            <option value="Thriller" />
-            <option value="Others" />
-          </datalist>
+            <select className={inputClass} value={form.genre} onChange={(e) => set("genre", e.target.value)} required>
+              <option value="">Select Genre *</option>
+              {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
 
-          <input
-            type="text"
-            placeholder="Year"
-            className={inputClass}
-            value={newTrending.year}
-            onChange={(e) => setNewTrending({ ...newTrending, year: e.target.value })}
-          />
-
-          <input
-            type="text"
-            placeholder="Rating"
-            className={inputClass}
-            value={newTrending.rating}
-            onChange={(e) => setNewTrending({ ...newTrending, rating: e.target.value })}
-          />
+            <input className={inputClass} placeholder="Year" value={form.year} onChange={(e) => set("year", e.target.value)} />
+            <input className={inputClass} placeholder="Rating (e.g. 8.5)" value={form.rating} onChange={(e) => set("rating", e.target.value)} />
+            <input
+              className={inputClass}
+              placeholder="Trailer URL (YouTube embed)"
+              value={form.trailer}
+              onChange={(e) => set("trailer", e.target.value)}
+            />
+          </div>
 
           <textarea
-            placeholder="Description"
-            value={newTrending.description}
-            onChange={(e) => setNewTrending({ ...newTrending, description: e.target.value })}
             className={inputClass}
-            rows="3"
+            placeholder="Description"
+            rows={3}
+            value={form.description}
+            onChange={(e) => set("description", e.target.value)}
           />
 
-          {/* Trailer input */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Trailer</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Paste trailer URL or choose file"
-                className={inputClass + " flex-1"}
-                value={newTrending.trailer}
-                onChange={(e) => setNewTrending({ ...newTrending, trailer: e.target.value })}
-              />
-              <label className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer transition-all">
-                Choose
-                <input
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const videoUrl = URL.createObjectURL(file);
-                      setNewTrending({ ...newTrending, trailer: videoUrl });
-                    }
-                  }}
-                />
+          {/* Poster */}
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400 font-medium">Poster Image</label>
+            <div className="flex gap-3 flex-wrap items-start">
+              <label className="flex items-center gap-2 px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-xl cursor-pointer transition-all text-sm font-medium">
+                <Upload size={16} />
+                {posterFile ? "Change file" : "Upload poster"}
+                <input type="file" accept="image/*" className="hidden" onChange={handlePosterFile} />
               </label>
-            </div>
-          </div>
 
-          {/* Poster input */}
-          <div className="flex flex-col gap-2 col-span-1 sm:col-span-2 md:col-span-3">
-            <label className="text-sm text-gray-300">Poster</label>
-            <div className="flex items-center gap-2">
               <input
-                type="text"
-                placeholder="Paste image URL or choose file"
-                className={inputClass + " flex-1"}
-                value={newTrending.image}
-                onChange={(e) => setNewTrending({ ...newTrending, image: e.target.value })}
+                className={inputClass + " flex-1 min-w-48"}
+                placeholder="Or paste image URL"
+                value={form.image}
+                onChange={(e) => { set("image", e.target.value); setPosterFile(null); setPosterPreview(""); }}
               />
-              <label className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer transition-all">
-                Choose
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const imageUrl = URL.createObjectURL(file);
-                      setNewTrending({ ...newTrending, image: imageUrl });
-                    }
-                  }}
-                />
-              </label>
-            </div>
-            <div className="flex flex-wrap justify-between">
-              {newTrending.image && (
-                <img
-                  src={newTrending.image}
-                  alt="Preview"
-                  className="mt-2 w-32 h-32 object-cover rounded-lg border border-gray-700"
-                />
-              )}
-              {newTrending.trailer && (
-                <video
-                  src={newTrending.trailer}
-                  controls
-                  className="mt-2 rounded-lg w-48 h-28 border border-gray-700"
-                />
+
+              {(posterPreview || form.image) && (
+                <div className="relative">
+                  <img
+                    src={posterPreview || form.image}
+                    alt="Preview"
+                    className="w-16 h-24 object-cover rounded-lg border border-gray-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setPosterFile(null); setPosterPreview(""); set("image", ""); }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center"
+                  >
+                    <X size={10} className="text-white" />
+                  </button>
+                </div>
               )}
             </div>
           </div>
-        </div>
 
-        <button
-          onClick={handleAdd}
-          className="mt-6 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-red-500/40 transition-all duration-300 transform hover:scale-105"
-        >
-          + Add Trending Movie
-        </button>
+          {message.text && (
+            <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+              message.type === "success"
+                ? "bg-green-500/10 border border-green-500/30 text-green-400"
+                : "bg-red-500/10 border border-red-500/30 text-red-400"
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting || uploadingPoster}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg"
+          >
+            {(submitting || uploadingPoster) && <Loader size={16} className="animate-spin" />}
+            {uploadingPoster ? "Uploading..." : submitting ? "Adding..." : "+ Add Trending"}
+          </button>
+        </form>
       </div>
 
-{/* Movie Table */}
-    <div className="overflow-x-auto rounded-xl mt-10">
-      <table className="min-w-full bg-white shadow-lg border-gray-200">
-        <thead className="bg-linear-to-r from-gray-600 to-black text-white">
-          <tr>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Poster</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Title</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Genre</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Rating</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Year</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Trailer</th>
-            <th className="p-4 text-left font-semibold text-sm uppercase tracking-wider">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {currentTrendings.map((movie) => (
-            <tr key={movie._id} className="hover:bg-blue-50 transition-colors duration-200">
-              <td className="p-4">
-                {movie.image && (
-                  <img
-                    src={movie.image}
-                    alt={movie.title}
-                    className="w-16 h-20 object-cover rounded-lg shadow-sm border border-gray-200"
-                  />
-                )}
-              </td>
-              <td className="p-4 font-medium text-gray-900">{movie.title}</td>
-              <td className="p-4">
-                <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
-                  {movie.genre}
-                </span>
-              </td>
-              <td className="p-4">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  ⭐ {movie.rating}
-                </span>
-              </td>
-              <td className="p-4 text-gray-700 font-medium">{movie.year}</td>
-              <td className="p-4">
-                {movie.trailer ? (
-                  <video
-                    src={movie.trailer}
-                    controls
-                    className="w-32 h-20 rounded-lg shadow-sm border border-gray-200"
-                  />
-                ) : (
-                  <span className="text-gray-400 italic">N/A</span>
-                )}
-              </td>
-              <td className="p-4">
-                <button
-                  onClick={() => handleDelete(movie._id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {trendings.length > moviesPerPage && (
-        <div className="flex justify-center items-center gap-3 mt-6">
-          <button
-            onClick={prevPage}
-            disabled={currentPage === 1}
-            className="bg-gray-700 hover:bg-gray-800 text-white p-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center transition-colors duration-200 shadow-sm hover:shadow-md"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="text-white font-medium text-base px-3 bg-gray-700 py-1.5 rounded-lg">
-            {currentPage} / {totalPages}
-          </span>
-          <button
-            onClick={nextPage}
-            disabled={currentPage === totalPages}
-            className="bg-gray-700 hover:bg-gray-800 text-white p-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center transition-colors duration-200 shadow-sm hover:shadow-md"
-          >
-            <ChevronRight size={18} />
-          </button>
+      {/* Table */}
+      <div className="bg-gray-900/50 border border-gray-700/40 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-700/40">
+          <h3 className="text-white font-semibold">Trending Movies ({trendings.length})</h3>
         </div>
-      )}
-    </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : trendings.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">No trending movies yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-800/60 text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left">Poster</th>
+                  <th className="px-4 py-3 text-left">Title</th>
+                  <th className="px-4 py-3 text-left">Genre</th>
+                  <th className="px-4 py-3 text-left">Rating</th>
+                  <th className="px-4 py-3 text-left">Year</th>
+                  <th className="px-4 py-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/60">
+                {paginated.map((movie) => (
+                  <tr key={movie._id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <img
+                        src={movie.posterUrls?.[0] || movie.image || "https://via.placeholder.com/40x56?text=?"}
+                        alt={movie.title}
+                        className="w-10 h-14 object-cover rounded shadow"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-white font-medium max-w-[160px]">
+                      <span className="truncate block">{movie.title}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs text-gray-300">{movie.genre}</span>
+                    </td>
+                    <td className="px-4 py-3 text-yellow-400 font-semibold">⭐ {movie.rating || "N/A"}</td>
+                    <td className="px-4 py-3 text-gray-400">{movie.year}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleDelete(movie._id)}
+                        disabled={deletingId === movie._id}
+                        className="p-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 rounded-lg transition-all disabled:opacity-50"
+                      >
+                        {deletingId === movie._id ? <Loader size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 px-5 py-4 border-t border-gray-700/40">
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-gray-300 text-sm font-medium px-3 py-1 bg-gray-800 rounded-lg">{page} / {totalPages}</span>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-40 transition-all">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

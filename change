@@ -1,0 +1,567 @@
+Here is your **clean, ready-to-copy production prompt** (formatted specifically for tools like **Kiro / Antigravity AI / code-generation agents**):
+
+---
+
+# 🎬 FULL PRODUCTION MOVIE STREAMING PLATFORM UPGRADE PROMPT
+
+You are a senior full-stack engineer, system architect, and production-level software developer.
+
+Your task is to transform an existing basic movie website into a **scalable, production-ready streaming platform** similar to Netflix, Disney+, and Amazon Prime Video.
+
+Use the following stack:
+
+* React (Vite)
+* Tailwind CSS
+* Node.js
+* Express.js
+* MongoDB
+* Cloudinary (media storage)
+
+---
+
+# ===================================
+
+# 🚀 SYSTEM OVERVIEW (IMPORTANT)
+
+# ===================================
+
+Redesign the entire system into a **cloud-based streaming platform** where:
+
+Admin uploads content → Cloudinary → MongoDB → Users stream content via URL
+
+Everything must be dynamic, scalable, and production-grade.
+
+---
+
+# ===================================
+
+# 👨‍💼 ADMIN SYSTEM (FULL CONTROL PANEL)
+
+# ===================================
+
+Build a secure admin dashboard with JWT authentication.
+
+## Admin capabilities:
+
+* Secure login/logout
+* Upload movies
+* Upload posters (1–4 images per movie)
+* Upload trailers (YouTube links)
+* Manage categories/genres dynamically
+* Edit movie details
+* Delete movies
+* View analytics dashboard
+
+---
+
+## 🎥 MOVIE UPLOAD FLOW (CRITICAL)
+
+### Step 1: Upload inputs
+
+Admin uploads:
+
+* Movie video file
+* Poster images (1–4 images, default 1)
+* Trailer (YouTube link)
+
+---
+
+### Step 2: Cloudinary upload
+
+* Movie video → Cloudinary upload → returns video URL
+* Poster images → Cloudinary upload → returns image URLs
+* Store all returned URLs in MongoDB
+
+---
+
+### Step 3: Database save
+
+Automatically store:
+
+* videoUrl (Cloudinary)
+* posterUrls (array: 1–4 images)
+* trailerUrl (YouTube link)
+
+---
+
+# ===================================
+
+# 👤 USER SYSTEM (NO AUTH REQUIRED)
+
+# ===================================
+
+Users must:
+
+* NOT require login or registration
+* Browse movies freely
+* Search movies
+* Watch movies instantly
+* Add favorites
+* Rate & comment
+* Continue watching system
+
+---
+
+# ===================================
+
+# 🧭 EXPLORE PAGE (FULLY DYNAMIC)
+
+# ===================================
+
+Create a premium Explore page with:
+
+* Sticky search bar
+* Dynamic genre filters (from DB only)
+* Dynamic year filters (from DB only)
+* “Other Genres” dropdown
+* Responsive movie grid
+* Infinite scroll or pagination
+* Skeleton loading states
+* Empty state UI
+
+---
+
+## 🔍 SEARCH SYSTEM REQUIREMENTS
+
+* Search by title
+* Search by description
+* Case-insensitive
+* Partial matching
+* Real-time typing search
+* Debounced API calls
+
+Navbar search must redirect to:
+
+```
+/explore?search=query
+```
+
+and auto-apply filters.
+
+---
+
+# ===================================
+
+# 🎭 DYNAMIC GENRES (NO HARDCODE)
+
+# ===================================
+
+* Genres must be fetched from MongoDB
+* Only genres with movies should appear
+* Auto-update when movies are added/removed
+
+Example:
+If DB contains Action, Horror, Anime → only these appear
+
+---
+
+## UI LOGIC:
+
+Primary genres:
+
+[ All ] [ Action ] [ Comedy ] [ Drama ] [ Horror ]
+
+Extra genres:
+
+→ Other Genres dropdown
+
+---
+
+# ===================================
+
+# 📅 YEAR FILTER SYSTEM
+
+# ===================================
+
+* Years must be dynamically extracted from database
+* Only years with movies should appear
+* Auto-update when new movies are added
+
+Example:
+2026, 2025, 2024
+
+---
+
+# ===================================
+
+# 🔗 COMBINED FILTERING SYSTEM
+
+# ===================================
+
+Filters must work together:
+
+* genre
+* year
+* search
+
+Example API:
+
+```
+GET /api/movies/explore?genre=Action&year=2025&search=hero
+```
+
+---
+
+# ===================================
+
+# 🎬 MOVIE GRID UI
+
+# ===================================
+
+Each movie card must display:
+
+* Poster (Cloudinary URL)
+* Title
+* Genre
+* Release year
+* Rating
+* Short description
+* Watch button
+
+## Hover effects:
+
+* Poster zoom
+* Dark overlay
+* Play icon animation
+* Smooth transitions
+
+If movie has multiple posters (1–4 images), show image preview slider on hover.
+
+---
+
+# ===================================
+
+# 🧠 BACKEND REQUIREMENTS
+
+# ===================================
+
+Create scalable REST APIs:
+
+## Endpoints:
+
+```
+GET /api/movies/explore
+GET /api/movies/genres
+GET /api/movies/years
+POST /api/admin/upload-movie
+POST /api/movies/:id/view
+POST /api/movies/:id/rate
+POST /api/movies/:id/favorite
+```
+
+---
+
+## Explore API supports:
+
+* search
+* genre
+* year
+* pagination
+* limit
+
+---
+
+## MongoDB filtering logic:
+
+* Regex search on title + description
+* Dynamic filtering
+* Combined query support
+* Pagination enabled
+
+---
+
+# ===================================
+
+# 🗄 DATABASE STRUCTURE
+
+# ===================================
+
+Movie schema:
+
+```js
+Movie {
+  title,
+  description,
+  genre,
+  release_year,
+  duration,
+
+  videoUrl,        // Cloudinary video
+  posterUrls,      // array (1–4 images)
+  trailerUrl,      // YouTube link
+
+  rating,
+  views,
+  likes,
+  saves,
+  shares,
+
+  createdAt,
+  updatedAt,
+
+  status,          // published/draft
+  visibility       // public/private
+}
+```
+
+---
+
+# ===================================
+
+# 📊 ANALYTICS SYSTEM
+
+# ===================================
+
+Track:
+
+* views
+* likes
+* shares
+* watch time
+* favorites
+
+Update metrics in real time on user actions.
+
+---
+
+# ===================================
+
+# 🔥 TRENDING ALGORITHM
+
+# ===================================
+
+TrendingScore=(Views\times0.6)+(Likes\times0.2)+(Shares\times0.1)+(RecentViews\times0.1)
+
+System must:
+
+* Auto-recalculate trending score
+* Use cron jobs or background workers
+* Prevent fake view inflation
+
+---
+
+# ===================================
+
+# 🏠 HOMEPAGE LOGIC
+
+# ===================================
+
+## Featured Section:
+
+* Top 3 most viewed movies
+
+## Latest Section:
+
+* 7 newest movies
+
+Both must be dynamic.
+
+---
+
+# ===================================
+
+# ⚡ PERFORMANCE REQUIREMENTS
+
+# ===================================
+
+* Lazy loading (Cloudinary CDN)
+* Debounced search
+* Pagination / infinite scroll
+* Indexed MongoDB fields:
+
+  * views
+  * createdAt
+  * genre
+  * trendingScore
+* Skeleton loaders
+* Caching (optional Redis)
+
+---
+
+# ===================================
+
+# 📱 RESPONSIVE DESIGN
+
+# ===================================
+
+Desktop:
+
+* Full grid + filters
+
+Tablet:
+
+* Adaptive 2–3 column grid
+
+Mobile:
+
+* Sticky search bar
+* Scrollable filters
+* 2-column grid
+
+---
+
+# ===================================
+
+# ❌ EMPTY STATES
+
+# ===================================
+
+If no results:
+
+* Show friendly UI
+* Suggest genres
+* Show trending fallback content
+
+---
+
+# ===================================
+
+# 🎨 UI DESIGN STYLE
+
+# ===================================
+
+* Dark cinematic theme
+* Netflix-style layout
+* Smooth animations
+* Glassmorphism effects
+* High-quality typography
+* Premium UI spacing
+
+---
+
+# ===================================
+
+# 🎯 FINAL OUTPUT REQUIREMENT
+
+# ===================================
+
+Generate a complete production-ready system that:
+
+* Uses Cloudinary for all media uploads
+* Supports multi-image posters (1–4 images)
+* Has secure admin dashboard
+* Has dynamic Explore page with filtering
+* Has trending + latest homepage system
+* Supports real-time engagement tracking
+* Is scalable for production use
+* Has clean, maintainable architecture
+
+---
+
+If you want next step, I can also generate:
+
+* full backend folder structure
+* MongoDB schema + indexes
+* React Explore page code
+* Admin dashboard UI
+
+Just tell me 👍
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Analyze this movie streaming website:
+
+MovieTrends Reference Website
+
+Recreate a modern original movie streaming platform inspired by its:
+
+ layout structure
+
+ UI/UX design
+
+ homepage organization
+
+ movie card design
+
+ navigation system
+
+ explore/search experience
+
+ hover animations
+
+ streaming page structure
+
+ responsive behavior
+
+ cinematic dark theme
+
+DO NOT copy copyrighted branding, logos, text, or proprietary assets.
+
+Instead:
+
+ build original reusable components
+
+ create a scalable architecture
+
+ generate clean production-ready code
+
+ improve responsiveness and performance
+
+ modernize the UI where possible
+
+Tech stack:
+
+ React + Vite
+
+ Tailwind CSS
+
+ Node.js
+
+ Express
+
+ MongoDB
+
+ Cloudinary
+
+Requirements:
+
+ Dynamic homepage
+
+ Trending movies section
+
+ Latest movies section
+
+ Explore page
+
+ Dynamic filters
+
+ Real-time search
+
+ Admin dashboard
+
+ Cloudinary uploads
+
+ Video streaming player
+
+ Favorites system
+
+ Continue watching
+
+ Responsive design
+
+ Framer Motion animations
+
+be based on my premade codebase

@@ -3,16 +3,10 @@ import Footer from "../components/Footer";
 
 const Privacy = () => {
   return (
-    <div
-      className="text-white bg-cover bg-center bg-no-repeat min-h-screen flex flex-col"
-      style={{
-        backgroundImage:
-          "url('https://image.tmdb.org/t/p/original/8bcoRX3hQRHufLPSDREdvr3YMXx.jpg')",
-      }}
-    >
-      <div className="bg-black/90 flex-1 overflow-y-auto">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <div className="flex-1 overflow-y-auto">
         {/* Main Content */}
-        <div className="max-w-5xl mx-auto mt-24 px-6 py-10">
+        <div className="max-w-5xl mx-auto pt-28 px-6 pb-10">
           <h1 className="text-4xl font-extrabold text-red-500 mb-4 text-center">
             Privacy Policy
           </h1>

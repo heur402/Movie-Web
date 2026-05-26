@@ -1,88 +1,116 @@
+// src/components/Footer.jsx
 import React from "react";
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Film, Facebook, Instagram, Twitter, Youtube, Heart } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-black/91 text-gray-300 py-10">
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-        {/* Brand */}
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-4">🎬 MovieWeb</h2>
-          <p className="text-sm text-gray-400">
-            Stream, explore and discover your favorite movies — anytime,
-            anywhere.
-          </p>
-        </div>
+    <footer className="bg-black border-t border-white/5 text-gray-400">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
-        {/* Quick Links */}
-        <div>
-          <h3 className="text-lg font-semibold text-white">Quick Links</h3>
-          <div className="w-12 border-b-4 border-red-500 mb-2"></div>
-          <ul className="space-y-2">
-            <li>
-              <Link className="hover:text-red-500 transition" to="/about">About Us</Link>
-            </li>
-            <li>
-              <Link className="hover:text-red-500 transition" to="/privacy">Privacy Policy</Link>
-            </li>
-            <li>
-              <Link to="/terms">Terms & Condition</Link>
-            </li>
-          </ul>
-        </div>
+          {/* Brand */}
+          <div className="lg:col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4 group">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center group-hover:bg-red-500 transition-colors">
+                <Film size={18} className="text-white" />
+              </div>
+              <span className="text-white font-bold text-xl">
+                Movie<span className="text-red-500">Web</span>
+              </span>
+            </Link>
+            <p className="text-sm leading-relaxed text-gray-500">
+              Stream, explore and discover your favorite movies — anytime, anywhere. Free, no subscriptions.
+            </p>
+            <div className="flex gap-3 mt-5">
+              {[
+                { icon: Facebook, label: "Facebook" },
+                { icon: Instagram, label: "Instagram" },
+                { icon: Twitter, label: "Twitter" },
+                { icon: Youtube, label: "YouTube" },
+              ].map(({ icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="w-9 h-9 bg-white/5 hover:bg-red-600/20 border border-white/10 hover:border-red-500/30 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-400 transition-all"
+                >
+                  <Icon size={16} />
+                </a>
+              ))}
+            </div>
+          </div>
 
-        {/* Contact Info */}
-        <div>
-          <h3 className="text-lg font-semibold text-white">Contact</h3>
-          <div className="w-14 border-b-4 border-red-500 mb-2"></div>
-          <ul className="space-y-2 text-sm">
-            <li>Email: byirngiro@gmail.com</li>
-            <li>Phone: +250 796 577 776</li>
-            <li>Location: Kigali, Rwanda</li>
-          </ul>
-        </div>
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Navigation</h3>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { to: "/", label: "Home" },
+                { to: "/explore", label: "Explore" },
+                { to: "/favorites", label: "My Favorites" },
+                { to: "/history", label: "Continue Watching" },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="hover:text-red-400 transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Social Media */}
-        <div>
-          <h3 className="text-lg font-semibold text-white">Follow Us</h3>
-          <div className="w-14 border-b-4 border-red-500 mb-2"></div>
-          <div className="flex space-x-4">
-            <a
-              href="#"
-              className="hover:text-red-500 transition"
-              aria-label="Facebook"
-            >
-              <Facebook />
-            </a>
-            <a
-              href="#"
-              className="hover:text-red-500 transition"
-              aria-label="Instagram"
-            >
-              <Instagram />
-            </a>
-            <a
-              href="#"
-              className="hover:text-red-500 transition"
-              aria-label="Twitter"
-            >
-              <Twitter />
-            </a>
-            <a
-              href="#"
-              className="hover:text-red-500 transition"
-              aria-label="YouTube"
-            >
-              <Youtube />
-            </a>
+          {/* Genres */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Genres</h3>
+            <ul className="space-y-2.5 text-sm">
+              {["Action", "Drama", "Comedy", "Horror", "Romance", "Sci-Fi"].map((g) => (
+                <li key={g}>
+                  <Link
+                    to={`/explore?genre=${encodeURIComponent(g)}`}
+                    className="hover:text-red-400 transition-colors"
+                  >
+                    {g}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal + Contact */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Company</h3>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { to: "/about", label: "About Us" },
+                { to: "/privacy", label: "Privacy Policy" },
+                { to: "/terms", label: "Terms & Conditions" },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="hover:text-red-400 transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 text-sm space-y-1">
+              <p>📧 byirngiro@gmail.com</p>
+              <p>📞 +250 796 577 776</p>
+              <p>📍 Kigali, Rwanda</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-gray-700 mt-10 pt-4 text-center text-sm text-gray-500">
-       copyright © {new Date().getFullYear()} MovieWeb. All rights reserved.
+      {/* Bottom bar */}
+      <div className="border-t border-white/5 py-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+          <p>© {new Date().getFullYear()} MovieWeb. All rights reserved.</p>
+          <p className="flex items-center gap-1">
+            Made with <Heart size={12} className="text-red-500 fill-red-500" /> in Rwanda
+          </p>
+        </div>
       </div>
     </footer>
   );
