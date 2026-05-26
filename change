@@ -1,4 +1,2 @@
-then let make other last improvement make a link in admin to see all movie in the card like that of client the implement dark mode and light mode trigger button and functionality even in admin make it
-
-
-and also make a button to client at footer in Navigation to go to /admin then on admin implement login system and sign up to go to it to make it secure
+some of the elemnt still dark in light mode change it to be looking well some are like navbar for client and also footer for client and so on
+ and also make a button to client at footer in Navigation to go to /admin then on admin implement login system and sign up to go to it to make it secure and also restore the bg color for my footer during darkmode as it was before

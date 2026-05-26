@@ -1,10 +1,12 @@
 // server.js — Production Movie Streaming Platform
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
+import express    from "express";
+import mongoose   from "mongoose";
+import cors       from "cors";
+import dotenv     from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
 import fileUpload from "express-fileupload";
+import jwt        from "jsonwebtoken";
+import bcrypt     from "bcryptjs";
 import { fileURLToPath } from "url";
 import path from "path";
 
@@ -623,5 +625,71 @@ app.get("/api/user/favorites", async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const adminSchema = new mongoose.Schema({
+  username : { type: String, required: true, unique: true, trim: true, minlength: 3 },
+  password : { type: String, required: true, minlength: 6 },
+}, { timestamps: true });
+
+adminSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+const Admin = mongoose.model("Admin", adminSchema);
+const JWT_SECRET = process.env.JWT_SECRET || "mw_admin_secret_2024";
+
+// Middleware: verify admin JWT
+const requireAdmin = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    req.admin = jwt.verify(auth.slice(7), JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
+// POST /api/admin/register
+app.post("/api/admin/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: "Username and password required" });
+    if (password.length < 6)
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    const exists = await Admin.findOne({ username: username.trim() });
+    if (exists) return res.status(409).json({ error: "Username already taken" });
+    const admin = new Admin({ username: username.trim(), password });
+    await admin.save();
+    const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET, { expiresIn: "7d" });
+    res.status(201).json({ token, username: admin.username });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/admin/login
+app.post("/api/admin/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: "Username and password required" });
+    const admin = await Admin.findOne({ username: username.trim() });
+    if (!admin) return res.status(401).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(password, admin.password);
+    if (!match) return res.status(401).json({ error: "Invalid credentials" });
+    const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET, { expiresIn: "7d" });
+    res.json({ token, username: admin.username });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/admin/me — verify token
+app.get("/api/admin/me", requireAdmin, (req, res) => {
+  res.json({ username: req.admin.username });
+});
+
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
