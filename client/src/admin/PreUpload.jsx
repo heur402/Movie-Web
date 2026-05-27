@@ -128,7 +128,7 @@ const PreUpload = () => {
       {/* ── Upload form ── */}
       <div className="bg-gradient-to-b from-gray-900 to-black border border-gray-700/40
                       rounded-2xl p-6 shadow-2xl">
-        <h3 className="text-lg font-bold text-purple-400 mb-5 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-red-400 mb-5 flex items-center gap-2">
           <Upload size={18} /> Upload New Video
         </h3>
 
@@ -156,8 +156,8 @@ const PreUpload = () => {
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer
                         transition-all duration-300 ${
               file
-                ? "border-purple-500 bg-purple-500/10"
-                : "border-gray-600 hover:border-purple-500 hover:bg-purple-500/5"
+                ? "border-red-500 bg-purple-500/10"
+                : "border-gray-600 hover:border-red-500 hover:bg-red-500/5"
             }`}
           >
             <input
@@ -170,7 +170,7 @@ const PreUpload = () => {
             />
             {file ? (
               <div className="space-y-2">
-                <Film size={36} className="text-purple-400 mx-auto" />
+                <Film size={36} className="text-red-400 mx-auto" />
                 <p className="text-purple-300 font-semibold">{file.name}</p>
                 <p className="text-gray-400 text-sm">{fmtBytes(file.size)}</p>
                 <button
@@ -228,7 +228,7 @@ const PreUpload = () => {
           <button
             type="submit"
             disabled={uploading || !file}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500
+            className="flex items-center gap-2 bg-red-600 hover:bg-purple-500
                        disabled:opacity-50 disabled:cursor-not-allowed text-white
                        font-bold px-6 py-3 rounded-xl transition-all shadow-lg"
           >

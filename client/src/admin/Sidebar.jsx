@@ -85,7 +85,7 @@ const Sidebar = () => {
       `}>
         {/* Logo */}
         <div className={`px-5 py-5 border-b ${footerBorder} flex items-center justify-between`}>
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/admin" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center
                             group-hover:bg-red-500 transition-colors">
               <FilmIcon size={16} className="text-white" />

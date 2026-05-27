@@ -6,7 +6,7 @@ import { Film, Facebook, Instagram, Twitter, Youtube, Heart } from "lucide-react
 
 const Footer = () => {
   return (
-    <footer className="bg-black border-t border-white/5 text-gray-400">
+    <footer className="bg-gray-950 border-t border-white/5 text-gray-400">
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
 
@@ -51,6 +51,7 @@ const Footer = () => {
                 { to: "/explore", label: "Explore" },
                 { to: "/favorites", label: "My Favorites" },
                 { to: "/history", label: "Continue Watching" },
+                { to: "/admin", label: "Admin" },
               ].map(({ to, label }) => (
                 <li key={to}>
                   <Link to={to} className="hover:text-red-400 transition-colors">
