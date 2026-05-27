@@ -1,37 +1,44 @@
-// src/admin/AdminLoginOnly.jsx — Login only page for admin (no registration)
+// src/admin/AdminLogin.jsx — Login + Register page for admin
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Film, Eye, EyeOff, Loader, AlertCircle, LogIn } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Film, Eye, EyeOff, Loader, AlertCircle, UserPlus, LogIn } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme }     from "../context/ThemeContext";
 
-const AdminLogin = () => {
+const AdminLoginCopy = () => {
+  const [mode,     setMode]     = useState("login"); // "login" | "register"
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [showPw,   setShowPw]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
 
-  const { login } = useAdminAuth();
-  const { dark, toggle } = useTheme();
-  const navigate = useNavigate();
+  const { login, register } = useAdminAuth();
+  const { dark, toggle }    = useTheme();
+  const navigate            = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     if (!username.trim() || !password) {
-      setError("Both username and password are required.");
+      setError("All fields are required.");
       return;
+    }
+    if (mode === "register") {
+      if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+      if (password !== confirm) { setError("Passwords do not match."); return; }
     }
 
     setLoading(true);
     try {
-      await login(username, password);
+      if (mode === "login") await login(username, password);
+      else                  await register(username, password);
       navigate("/admin");
     } catch (err) {
-      setError(err.message || "Login failed. Please check your credentials.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -75,8 +82,22 @@ const AdminLogin = () => {
             MovieWeb Admin
           </h1>
           <p className={`text-sm mt-1 ${dark ? "text-gray-400" : "text-slate-500"}`}>
-            Sign in to your admin account
+            {mode === "login" ? "Sign in to your admin account" : "Create a new admin account"}
           </p>
+        </div>
+
+        {/* Tab switcher */}
+        <div className={`flex mx-8 mb-6 rounded-xl p-1 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
+          {["login", "register"].map((m) => (
+            <button key={m} onClick={() => { setMode(m); setError(""); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${
+                mode === m
+                  ? "bg-red-600 text-white shadow-md"
+                  : dark ? "text-gray-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
+              }`}>
+              {m === "login" ? "Sign In" : "Register"}
+            </button>
+          ))}
         </div>
 
         {/* Form */}
@@ -84,14 +105,12 @@ const AdminLogin = () => {
           <div>
             <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${
               dark ? "text-gray-400" : "text-slate-500"
-            }`}>
-              Username
-            </label>
+            }`}>Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Enter username"
               className={ic}
               autoComplete="username"
               required
@@ -101,55 +120,75 @@ const AdminLogin = () => {
           <div>
             <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${
               dark ? "text-gray-400" : "text-slate-500"
-            }`}>
-              Password
-            </label>
+            }`}>Password</label>
             <div className="relative">
               <input
                 type={showPw ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 className={ic + " pr-11"}
-                autoComplete="current-password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
+              <button type="button" onClick={() => setShowPw(!showPw)}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
                   dark ? "text-gray-500 hover:text-gray-300" : "text-slate-400 hover:text-slate-600"
-                }`}
-              >
+                }`}>
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Error message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30
-                         text-red-400 rounded-xl text-sm"
-            >
-              <AlertCircle size={15} className="shrink-0" />
-              {error}
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {mode === "register" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${
+                  dark ? "text-gray-400" : "text-slate-500"
+                }`}>Confirm Password</label>
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="Confirm password"
+                  className={ic}
+                  autoComplete="new-password"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={loading}
+          {/* Error */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30
+                           text-red-400 rounded-xl text-sm"
+              >
+                <AlertCircle size={15} className="shrink-0" />
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Submit */}
+          <button type="submit" disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-500
                        disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl
-                       transition-all shadow-lg shadow-red-600/30 mt-2"
-          >
+                       transition-all shadow-lg shadow-red-600/30 mt-2">
             {loading
               ? <Loader size={18} className="animate-spin" />
-              : <><LogIn size={18} /> Sign In</>
+              : mode === "login"
+              ? <><LogIn size={18} /> Sign In</>
+              : <><UserPlus size={18} /> Create Account</>
             }
           </button>
 
@@ -163,4 +202,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default AdminLoginCopy;
