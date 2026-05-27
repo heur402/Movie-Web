@@ -58,7 +58,7 @@ const Trending = () => {
     if (!autoplay || movies.length <= 1) return;
     timerRef.current = setInterval(() => {
       setActiveIdx((i) => (i + 1) % movies.length);
-    }, 6000);
+    }, 3000);
     return () => clearInterval(timerRef.current);
   }, [autoplay, movies.length]);
 
@@ -70,13 +70,13 @@ const Trending = () => {
   const nextSlide = useCallback(() => {
     setActiveIdx((i) => (i + 1) % movies.length);
     setAutoplay(false);
-    setTimeout(() => setAutoplay(true), 5000);
+    setTimeout(() => setAutoplay(true), 100);
   }, [movies.length]);
 
   const prevSlide = useCallback(() => {
     setActiveIdx((i) => (i - 1 + movies.length) % movies.length);
     setAutoplay(false);
-    setTimeout(() => setAutoplay(true), 5000);
+    setTimeout(() => setAutoplay(true), 100);
   }, [movies.length]);
 
   const active = movies[activeIdx];
