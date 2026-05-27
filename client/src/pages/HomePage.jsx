@@ -1,15 +1,18 @@
 // src/pages/HomePage.jsx
-import React from "react";
-import Trending from "../components/Trending";
-import LatestMovies from "../components/LatestMovies";
+import Trending        from "../components/Trending";
+import ResumeWatching  from "../components/ResumeWatching";
+import LatestMovies    from "../components/LatestMovies";
 import MovieCategories from "../components/MovieCategories";
-import Footer from "../components/Footer";
+import Footer          from "../components/Footer";
 
 const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Hero / Trending Banner */}
       <Trending />
+
+      {/* Resume Watching — only renders when there's in-progress history */}
+      <ResumeWatching />
 
       {/* Latest Releases */}
       <LatestMovies />
