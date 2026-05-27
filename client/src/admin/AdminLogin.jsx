@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Film, Eye, EyeOff, Loader, AlertCircle, LogIn } from "lucide-react";
+import { Film, Eye, EyeOff, Loader, AlertCircle, LogIn, Sun, Moon } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -55,7 +55,7 @@ const AdminLogin = () => {
             ? "bg-white/5 border-white/10 text-gray-300 hover:text-yellow-400"
             : "bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm"
         }`}>
-        {dark ? "☀️" : "🌙"}
+        {dark ? <Sun size={18} /> : <Moon size={18} />}
       </button>
 
       <motion.div
