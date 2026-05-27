@@ -1,7 +1,9 @@
 // src/admin/Movies.jsx
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Check, Upload, Loader, User, Video } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Check, Upload, Loader, User, Video, Eye } from "lucide-react";
 import AddMovie from "./component/AddMovie";
+import { adminFetch } from "../context/AdminAuthContext";
 
 const API     = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const PER_PAGE = 8;
@@ -16,6 +18,7 @@ const Movies = () => {
   const [editPosterPreview, setEditPosterPreview] = useState("");
   const [savingEdit,  setSavingEdit]  = useState(false);
   const [deletingId,  setDeletingId]  = useState(null);
+  const navigate = useNavigate();
 
   const fetchMovies = async () => {
     try {
@@ -64,10 +67,10 @@ const Movies = () => {
       if (editPosterFile) {
         const fd  = new FormData();
         fd.append("image", editPosterFile);
-        const up  = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
+        const up  = await adminFetch(`${API}/api/upload/image`, { method: "POST", body: fd });
         if (up.ok) { const { url } = await up.json(); imageUrl = url; }
       }
-      const res = await fetch(`${API}/api/movies/${id}`, {
+      const res = await adminFetch(`${API}/api/movies/${id}`, {
         method  : "PUT",
         headers : { "Content-Type": "application/json" },
         body    : JSON.stringify({ ...editForm, image: imageUrl }),
@@ -84,7 +87,7 @@ const Movies = () => {
     if (!confirm("Delete this movie?")) return;
     setDeletingId(id);
     try {
-      await fetch(`${API}/api/movies/${id}`, { method: "DELETE" });
+      await adminFetch(`${API}/api/movies/${id}`, { method: "DELETE" });
       setMovies((prev) => prev.filter((m) => m._id !== id));
       if (editingId === id) cancelEdit();
     } catch { alert("Delete failed"); }
@@ -227,6 +230,14 @@ const Movies = () => {
                           </>
                         ) : (
                           <>
+                            <button
+                              onClick={() => navigate(`/admin/movies/${movie._id}`)}
+                              className="p-1.5 bg-purple-600/20 hover:bg-purple-600/40 border
+                                         border-purple-500/30 text-purple-400 rounded-lg transition-all"
+                              title="View details"
+                            >
+                              <Eye size={14} />
+                            </button>
                             <button onClick={() => startEdit(movie)}
                               className="p-1.5 bg-blue-600/20 hover:bg-blue-600/40 border
                                          border-blue-500/30 text-blue-400 rounded-lg transition-all">

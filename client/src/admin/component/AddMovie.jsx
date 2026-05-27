@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Upload, X, Link as LinkIcon, Film, Loader, User, Video } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import { adminFetch } from "../../context/AdminAuthContext";
 
 const API    = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const GENRES = ["Action","Drama","Comedy","Horror","Romance","Sci-Fi","Adventure",
@@ -66,7 +67,7 @@ const AddMovie = ({ onMovieAdded }) => {
     try {
       const fd = new FormData();
       fd.append("image", posterFile);
-      const res = await fetch(`${API}/api/upload/image`, { method: "POST", body: fd });
+      const res = await adminFetch(`${API}/api/upload/image`, { method: "POST", body: fd });
       if (!res.ok) {
         const error = await res.text();
         throw new Error(error || "Poster upload failed");
@@ -124,7 +125,7 @@ const AddMovie = ({ onMovieAdded }) => {
         rating: form.rating ? parseFloat(form.rating) : null,
       };
       
-      const res = await fetch(`${API}/api/movies`, {
+      const res = await adminFetch(`${API}/api/movies`, {
         method  : "POST",
         headers : { "Content-Type": "application/json" },
         body    : JSON.stringify(movieData),

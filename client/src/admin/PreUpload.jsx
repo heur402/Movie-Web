@@ -5,6 +5,8 @@ import {
   Upload, Film, Trash2, Copy, Play, Check,
   Loader, X, HardDrive, Clock, Calendar, AlertCircle
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { adminFetch } from "../context/AdminAuthContext";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
@@ -16,6 +18,7 @@ const fmtBytes = (b) => {
 };
 
 const PreUpload = () => {
+  const { dark } = useTheme();
   const [records,    setRecords]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [uploading,  setUploading]  = useState(false);
@@ -33,7 +36,7 @@ const PreUpload = () => {
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res  = await fetch(`${API}/api/preupload`);
+        const res  = await adminFetch(`${API}/api/preupload`);
         const data = await res.json();
         setRecords(Array.isArray(data) ? data : []);
       } catch { setError("Failed to load pre-uploads."); }
@@ -75,7 +78,7 @@ const PreUpload = () => {
       fd.append("video", file);
       fd.append("title", title || file.name);
 
-      const res = await fetch(`${API}/api/preupload`, { method: "POST", body: fd });
+      const res = await adminFetch(`${API}/api/preupload`, { method: "POST", body: fd });
       clearInterval(interval);
       setProgress(100);
 
@@ -109,7 +112,7 @@ const PreUpload = () => {
     if (!confirm("Delete this pre-upload? This will also remove it from Cloudinary.")) return;
     setDeletingId(id);
     try {
-      await fetch(`${API}/api/preupload/${id}`, { method: "DELETE" });
+      await adminFetch(`${API}/api/preupload/${id}`, { method: "DELETE" });
       setRecords((prev) => prev.filter((r) => r._id !== id));
       if (previewId === id) setPreviewId(null);
     } catch { alert("Delete failed."); }
@@ -119,16 +122,23 @@ const PreUpload = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-white">Pre-Upload Videos</h2>
-        <p className="text-gray-400 text-sm mt-1">
+        <h2 className={`text-2xl font-bold ${dark ? "text-white" : "text-gray-900"}`}>
+          Pre-Upload Videos
+        </h2>
+        <p className={`text-sm mt-1 ${dark ? "text-gray-400" : "text-gray-600"}`}>
           Upload videos to Cloudinary first, then copy the link into Add Movie → Movie Link.
         </p>
       </div>
 
       {/* ── Upload form ── */}
-      <div className="bg-gradient-to-b from-gray-900 to-black border border-gray-700/40
-                      rounded-2xl p-6 shadow-2xl">
-        <h3 className="text-lg font-bold text-red-400 mb-5 flex items-center gap-2">
+      <div className={`border rounded-2xl p-6 shadow-2xl transition-all duration-300 ${
+        dark 
+          ? "bg-gradient-to-b from-gray-900 to-black border-gray-700/40"
+          : "bg-gradient-to-b from-gray-50 to-white border-gray-200 shadow-gray-200"
+      }`}>
+        <h3 className={`text-lg font-bold mb-5 flex items-center gap-2 ${
+          dark ? "text-red-400" : "text-red-600"
+        }`}>
           <Upload size={18} /> Upload New Video
         </h3>
 
@@ -139,9 +149,12 @@ const PreUpload = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Video title (optional)"
-            className="w-full bg-gray-900/80 border border-gray-700/60 text-white
-                       placeholder-gray-500 px-4 py-3 rounded-xl focus:outline-none
-                       focus:ring-2 focus:ring-purple-500/50 text-sm"
+            className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 
+                       focus:ring-purple-500/50 text-sm transition-all ${
+              dark
+                ? "bg-gray-900/80 border border-gray-700/60 text-white placeholder-gray-500"
+                : "bg-white border border-gray-300 text-gray-900 placeholder-gray-400"
+            }`}
           />
 
           {/* Drop zone */}
@@ -156,8 +169,12 @@ const PreUpload = () => {
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer
                         transition-all duration-300 ${
               file
-                ? "border-red-500 bg-purple-500/10"
-                : "border-gray-600 hover:border-red-500 hover:bg-red-500/5"
+                ? dark
+                  ? "border-red-500 bg-purple-500/10"
+                  : "border-red-500 bg-purple-50"
+                : dark
+                  ? "border-gray-600 hover:border-red-500 hover:bg-red-500/5"
+                  : "border-gray-300 hover:border-red-500 hover:bg-red-50"
             }`}
           >
             <input
@@ -170,25 +187,32 @@ const PreUpload = () => {
             />
             {file ? (
               <div className="space-y-2">
-                <Film size={36} className="text-red-400 mx-auto" />
-                <p className="text-purple-300 font-semibold">{file.name}</p>
-                <p className="text-gray-400 text-sm">{fmtBytes(file.size)}</p>
+                <Film size={36} className={`mx-auto ${dark ? "text-red-400" : "text-red-600"}`} />
+                <p className={`font-semibold ${dark ? "text-purple-300" : "text-purple-700"}`}>
+                  {file.name}
+                </p>
+                <p className={`text-sm ${dark ? "text-gray-400" : "text-gray-600"}`}>
+                  {fmtBytes(file.size)}
+                </p>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); }}
-                  className="text-red-400 hover:text-red-300 text-xs flex items-center
-                             gap-1 mx-auto transition-colors"
+                  className={`text-xs flex items-center gap-1 mx-auto transition-colors ${
+                    dark ? "text-red-400 hover:text-red-300" : "text-red-600 hover:text-red-700"
+                  }`}
                 >
                   <X size={12} /> Remove
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                <Upload size={36} className="text-gray-500 mx-auto" />
-                <p className="text-gray-300 font-medium">
+                <Upload size={36} className={`mx-auto ${dark ? "text-gray-500" : "text-gray-400"}`} />
+                <p className={`font-medium ${dark ? "text-gray-300" : "text-gray-700"}`}>
                   Click or drag & drop a video file
                 </p>
-                <p className="text-gray-500 text-sm">MP4, WebM, MOV, AVI, MKV · Max 500 MB</p>
+                <p className={`text-sm ${dark ? "text-gray-500" : "text-gray-400"}`}>
+                  MP4, WebM, MOV, AVI, MKV · Max 500 MB
+                </p>
               </div>
             )}
           </div>
@@ -196,19 +220,21 @@ const PreUpload = () => {
           {/* Video preview */}
           {preview && (
             <video src={preview} controls
-                   className="w-full max-h-48 rounded-xl border border-gray-700 bg-black" />
+                   className={`w-full max-h-48 rounded-xl border ${dark ? "border-gray-700" : "border-gray-200"} bg-black`} />
           )}
 
           {/* Progress */}
           {uploading && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-purple-300 flex items-center gap-2">
+                <span className={`flex items-center gap-2 ${dark ? "text-purple-300" : "text-purple-700"}`}>
                   <Loader size={14} className="animate-spin" /> Uploading to Cloudinary…
                 </span>
-                <span className="text-purple-300">{Math.round(progress)}%</span>
+                <span className={dark ? "text-purple-300" : "text-purple-700"}>
+                  {Math.round(progress)}%
+                </span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className={`w-full rounded-full h-2 ${dark ? "bg-gray-800" : "bg-gray-200"}`}>
                 <div
                   className="bg-purple-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}
@@ -219,8 +245,11 @@ const PreUpload = () => {
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border
-                            border-red-500/30 text-red-400 rounded-xl text-sm">
+            <div className={`flex items-center gap-2 px-4 py-3 border rounded-xl text-sm ${
+              dark
+                ? "bg-red-500/10 border-red-500/30 text-red-400"
+                : "bg-red-50 border-red-200 text-red-600"
+            }`}>
               <AlertCircle size={16} /> {error}
             </div>
           )}
@@ -228,36 +257,41 @@ const PreUpload = () => {
           <button
             type="submit"
             disabled={uploading || !file}
-            className="flex items-center gap-2 bg-red-600 hover:bg-purple-500
-                       disabled:opacity-50 disabled:cursor-not-allowed text-white
-                       font-bold px-6 py-3 rounded-xl transition-all shadow-lg"
+            className={`flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+                       text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg ${
+              dark
+                ? "bg-red-600 hover:bg-red-500"
+                : "bg-red-600 hover:bg-red-600"
+            }`}
           >
             {uploading ? <Loader size={16} className="animate-spin" /> : <Upload size={16} />}
-            {uploading ? "Uploading…" : "Upload to Cloudinary"}
+            {uploading ? "Uploading…" : "Upload"}
           </button>
         </form>
       </div>
 
       {/* ── Cards grid ── */}
       <div>
-        <h3 className="text-lg font-bold text-white mb-4">
+        <h3 className={`text-lg font-bold mb-4 ${dark ? "text-white" : "text-gray-900"}`}>
           Uploaded Videos ({records.length})
         </h3>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1,2,3].map((i) => (
-              <div key={i} className="bg-gray-900 rounded-xl overflow-hidden animate-pulse">
-                <div className="aspect-video bg-gray-800" />
+              <div key={i} className={`rounded-xl overflow-hidden animate-pulse ${
+                dark ? "bg-gray-900" : "bg-gray-200"
+              }`}>
+                <div className={`aspect-video ${dark ? "bg-gray-800" : "bg-gray-300"}`} />
                 <div className="p-4 space-y-2">
-                  <div className="h-4 bg-gray-800 rounded w-3/4" />
-                  <div className="h-3 bg-gray-800 rounded w-1/2" />
+                  <div className={`h-4 rounded w-3/4 ${dark ? "bg-gray-800" : "bg-gray-300"}`} />
+                  <div className={`h-3 rounded w-1/2 ${dark ? "bg-gray-800" : "bg-gray-300"}`} />
                 </div>
               </div>
             ))}
           </div>
         ) : records.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className={`text-center py-16 ${dark ? "text-gray-400" : "text-gray-500"}`}>
             <Film size={40} className="mx-auto mb-3 opacity-30" />
             <p>No pre-uploaded videos yet.</p>
           </div>
@@ -273,6 +307,7 @@ const PreUpload = () => {
                 copied={copiedId === record._id}
                 previewing={previewId === record._id}
                 deleting={deletingId === record._id}
+                dark={dark}
               />
             ))}
           </div>
@@ -295,14 +330,20 @@ const PreUpload = () => {
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-3xl bg-gray-900 rounded-2xl overflow-hidden shadow-2xl"
+              className={`w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl ${
+                dark ? "bg-gray-900" : "bg-white"
+              }`}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-                <span className="text-white font-semibold text-sm">
+              <div className={`flex items-center justify-between px-4 py-3 border-b ${
+                dark ? "border-gray-800" : "border-gray-200"
+              }`}>
+                <span className={`font-semibold text-sm ${dark ? "text-white" : "text-gray-900"}`}>
                   {records.find((r) => r._id === previewId)?.title || "Preview"}
                 </span>
                 <button onClick={() => setPreviewId(null)}
-                        className="text-gray-400 hover:text-white transition-colors">
+                        className={`transition-colors ${
+                          dark ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-gray-900"
+                        }`}>
                   <X size={18} />
                 </button>
               </div>
@@ -320,32 +361,43 @@ const PreUpload = () => {
   );
 };
 
-// ── Card component ─────────────────────────────────────────────────────────────
-const PreUploadCard = ({ record, onCopy, onDelete, onPreview, copied, previewing, deleting }) => (
+// ── Card component with theme support ─────────────────────────────────────────
+const PreUploadCard = ({ record, onCopy, onDelete, onPreview, copied, previewing, deleting, dark }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
-    className="group bg-gray-900 border border-gray-800 rounded-xl overflow-hidden
-               hover:border-gray-700 transition-all"
+    className={`group border rounded-xl overflow-hidden transition-all ${
+      dark
+        ? "bg-gray-900 border-gray-800 hover:border-gray-700"
+        : "bg-white border-gray-200 hover:border-gray-300 shadow-sm"
+    }`}
   >
     {/* Thumbnail */}
-    <div className="relative aspect-video bg-gray-800 overflow-hidden">
+    <div className={`relative aspect-video overflow-hidden ${
+      dark ? "bg-gray-800" : "bg-gray-100"
+    }`}>
       {record.thumbnail ? (
         <img src={record.thumbnail} alt={record.title}
              className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full flex items-center justify-center">
-          <Film size={32} className="text-gray-600" />
+          <Film size={32} className={dark ? "text-gray-600" : "text-gray-400"} />
         </div>
       )}
 
       {/* Status badge */}
       <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold ${
         record.status === "ready"
-          ? "bg-green-500/20 border border-green-500/40 text-green-400"
+          ? dark
+            ? "bg-green-500/20 border border-green-500/40 text-green-400"
+            : "bg-green-100 border border-green-300 text-green-700"
           : record.status === "used"
-          ? "bg-blue-500/20 border border-blue-500/40 text-blue-400"
-          : "bg-yellow-500/20 border border-yellow-500/40 text-yellow-400"
+          ? dark
+            ? "bg-blue-500/20 border border-blue-500/40 text-blue-400"
+            : "bg-blue-100 border border-blue-300 text-blue-700"
+          : dark
+            ? "bg-yellow-500/20 border border-yellow-500/40 text-yellow-400"
+            : "bg-yellow-100 border border-yellow-300 text-yellow-700"
       }`}>
         {record.status}
       </div>
@@ -380,9 +432,13 @@ const PreUploadCard = ({ record, onCopy, onDelete, onPreview, copied, previewing
 
     {/* Info */}
     <div className="p-3">
-      <h4 className="text-white font-semibold text-sm truncate">{record.title || "Untitled"}</h4>
+      <h4 className={`font-semibold text-sm truncate ${dark ? "text-white" : "text-gray-900"}`}>
+        {record.title || "Untitled"}
+      </h4>
 
-      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
+      <div className={`flex items-center gap-3 mt-2 text-xs flex-wrap ${
+        dark ? "text-gray-400" : "text-gray-600"
+      }`}>
         {record.duration && (
           <span className="flex items-center gap-1">
             <Clock size={10} /> {record.duration}
@@ -408,8 +464,12 @@ const PreUploadCard = ({ record, onCopy, onDelete, onPreview, copied, previewing
           className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg
                       text-xs font-medium transition-all border ${
             copied
-              ? "bg-green-600/20 border-green-500/30 text-green-400"
-              : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+              ? dark
+                ? "bg-green-600/20 border-green-500/30 text-green-400"
+                : "bg-green-100 border-green-300 text-green-700"
+              : dark
+                ? "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
           }`}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -418,8 +478,11 @@ const PreUploadCard = ({ record, onCopy, onDelete, onPreview, copied, previewing
         <button
           onClick={() => onDelete(record._id)}
           disabled={deleting}
-          className="p-1.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30
-                     text-red-400 rounded-lg transition-all disabled:opacity-50"
+          className={`p-1.5 rounded-lg transition-all disabled:opacity-50 ${
+            dark
+              ? "bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400"
+              : "bg-red-100 hover:bg-red-200 border border-red-300 text-red-600"
+          }`}
         >
           {deleting ? <Loader size={13} className="animate-spin" /> : <Trash2 size={13} />}
         </button>

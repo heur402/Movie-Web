@@ -1,2 +1,1 @@
-some of the elemnt still dark in light mode change it to be looking well some are like navbar for client and also footer for client and so on
- and also make a button to client at footer in Navigation to go to /admin then on admin implement login system and sign up to go to it to make it secure and also restore the bg color for my footer during darkmode as it was before
+settings.jsx change this  page to be used to edit admin data and implement it backend side to work properly

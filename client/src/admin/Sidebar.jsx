@@ -1,5 +1,5 @@
 // src/admin/Sidebar.jsx
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,6 +8,7 @@ import {
   LayoutGrid, Sun, Moon,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 const menuItems = [
   { path: "/admin",           label: "Dashboard",     icon: LayoutDashboard },
@@ -20,7 +21,14 @@ const menuItems = [
 const Sidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate  = useNavigate();
   const { dark, toggle: toggleTheme } = useTheme();
+  const { admin, logout } = useAdminAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/admin/login");
+  };
 
   useEffect(() => { setMobileOpen(false); }, [location]);
 
@@ -122,6 +130,15 @@ const Sidebar = () => {
 
         {/* Footer */}
         <div className={`px-3 py-4 border-t ${footerBorder} space-y-1`}>
+          {/* Admin info */}
+          {admin && (
+            <div className={`px-3 py-2 mb-1 rounded-xl text-xs ${
+              dark ? "text-gray-500" : "text-slate-400"
+            }`}>
+              Signed in as <span className={`font-semibold ${dark ? "text-gray-300" : "text-slate-600"}`}>{admin.username}</span>
+            </div>
+          )}
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -140,6 +157,17 @@ const Sidebar = () => {
             <LogOut size={17} />
             Back to Site
           </Link>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className={`${linkBase} w-full text-red-400 hover:text-red-300 ${
+              dark ? "hover:bg-red-500/10" : "hover:bg-red-50"
+            }`}
+          >
+            <LogOut size={17} />
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

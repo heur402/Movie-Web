@@ -7,16 +7,27 @@ import { v2 as cloudinary } from "cloudinary";
 import fileUpload from "express-fileupload";
 import jwt        from "jsonwebtoken";
 import bcrypt     from "bcryptjs";
+import rateLimit  from "express-rate-limit";
 import { fileURLToPath } from "url";
 import path from "path";
 
 dotenv.config();
+
+// ── Validate critical secrets at startup ──────────────────────────────────────
+if (!process.env.JWT_SECRET) {
+  console.error("❌ FATAL: JWT_SECRET is not set in .env — refusing to start.");
+  process.exit(1);
+}
+if (!process.env.ADMIN_REGISTER_SECRET) {
+  console.warn("⚠️  WARNING: ADMIN_REGISTER_SECRET is not set — admin registration is disabled.");
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ── Cloudinary ────────────────────────────────────────────────────────────────
 cloudinary.config({
@@ -25,8 +36,41 @@ cloudinary.config({
   api_secret : process.env.CLOUDINARY_API_SECRET,
 });
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors());
+// ── CORS — restrict to known frontend origin ──────────────────────────────────
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim());
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, same-origin)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+// Strict limit on auth endpoints — 10 attempts per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs        : 15 * 60 * 1000,
+  max             : 10,
+  standardHeaders : true,
+  legacyHeaders   : false,
+  message         : { error: "Too many attempts. Please try again in 15 minutes." },
+});
+
+// General API limiter — 200 requests per minute per IP
+const apiLimiter = rateLimit({
+  windowMs        : 60 * 1000,
+  max             : 200,
+  standardHeaders : true,
+  legacyHeaders   : false,
+  message         : { error: "Too many requests. Please slow down." },
+});
+
+app.use("/api/", apiLimiter);
+// ── Body / file middleware ────────────────────────────────────────────────────
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(fileUpload({
@@ -119,6 +163,37 @@ const userSchema = new mongoose.Schema({
 const Movie     = mongoose.model("Movie",     movieSchema);
 const PreUpload = mongoose.model("PreUpload", preUploadSchema);
 const User      = mongoose.model("User",      userSchema);
+
+// ── Admin schema & auth middleware (defined early so routes can use requireAdmin) ──
+const adminSchema = new mongoose.Schema({
+  username : { type: String, required: true, unique: true, trim: true, minlength: 3 },
+  password : { type: String, required: true, minlength: 6 },
+}, { timestamps: true });
+
+adminSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+const Admin = mongoose.model("Admin", adminSchema);
+
+// requireAdmin: verify JWT and attach admin payload to req.admin
+const requireAdmin = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: no token provided" });
+  }
+  try {
+    req.admin = jwt.verify(auth.slice(7), JWT_SECRET);
+    next();
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Token expired. Please log in again." });
+    }
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const uploadToCloudinary = async (file, folder = "movies", resourceType = "auto", extra = {}) => {
@@ -292,7 +367,7 @@ app.get("/api/movies", async (req, res) => {
   } catch { res.status(500).json({ error: "Failed to fetch movies" }); }
 });
 
-app.post("/api/movies", async (req, res) => {
+app.post("/api/movies", requireAdmin, async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.files?.poster) {
@@ -321,7 +396,7 @@ app.get("/api/movies/:id", async (req, res) => {
   } catch { res.status(500).json({ error: "Server error" }); }
 });
 
-app.put("/api/movies/:id", async (req, res) => {
+app.put("/api/movies/:id", requireAdmin, async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.files?.poster) {
@@ -337,7 +412,7 @@ app.put("/api/movies/:id", async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete("/api/movies/:id", async (req, res) => {
+app.delete("/api/movies/:id", requireAdmin, async (req, res) => {
   try {
     const deleted = await Movie.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Movie not found" });
@@ -460,10 +535,16 @@ app.post("/api/trending/:id/view", async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // POST /api/preupload — upload video to Cloudinary, save record
-app.post("/api/preupload", async (req, res) => {
+app.post("/api/preupload", requireAdmin, async (req, res) => {
   try {
     if (!req.files?.video) return res.status(400).json({ error: "No video file" });
     const file = req.files.video;
+
+    // Validate video MIME type
+    const allowedVideoTypes = ["video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/x-msvideo", "video/x-matroska"];
+    if (!allowedVideoTypes.includes(file.mimetype)) {
+      return res.status(400).json({ error: "Invalid file type. Only MP4, WebM, MOV, AVI, MKV videos are allowed." });
+    }
 
     // Upload to Cloudinary with eager thumbnail
     const result = await cloudinary.uploader.upload(file.tempFilePath, {
@@ -502,8 +583,8 @@ app.post("/api/preupload", async (req, res) => {
   }
 });
 
-// GET /api/preupload — list all pre-uploaded videos
-app.get("/api/preupload", async (req, res) => {
+// GET /api/preupload — list all pre-uploaded videos (admin only)
+app.get("/api/preupload", requireAdmin, async (req, res) => {
   try {
     const records = await PreUpload.find().sort({ uploadedAt: -1 });
     res.json(records);
@@ -511,7 +592,7 @@ app.get("/api/preupload", async (req, res) => {
 });
 
 // DELETE /api/preupload/:id
-app.delete("/api/preupload/:id", async (req, res) => {
+app.delete("/api/preupload/:id", requireAdmin, async (req, res) => {
   try {
     const record = await PreUpload.findById(req.params.id);
     if (!record) return res.status(404).json({ error: "Not found" });
@@ -528,18 +609,34 @@ app.delete("/api/preupload/:id", async (req, res) => {
 // UPLOAD HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-app.post("/api/upload/image", async (req, res) => {
+app.post("/api/upload/image", requireAdmin, async (req, res) => {
   try {
     if (!req.files?.image) return res.status(400).json({ error: "No image" });
-    const r = await uploadToCloudinary(req.files.image, "movies/posters", "image");
+    const file = req.files.image;
+    // Validate image MIME type
+    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg"];
+    if (!allowedImageTypes.includes(file.mimetype)) {
+      return res.status(400).json({ error: "Invalid file type. Only JPEG, PNG, WEBP images are allowed." });
+    }
+    // Validate image size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: "Image too large. Maximum size is 10MB." });
+    }
+    const r = await uploadToCloudinary(file, "movies/posters", "image");
     res.json({ url: r.secure_url });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post("/api/upload/video", async (req, res) => {
+app.post("/api/upload/video", requireAdmin, async (req, res) => {
   try {
     if (!req.files?.video) return res.status(400).json({ error: "No video" });
-    const r = await uploadToCloudinary(req.files.video, "movies/videos", "video");
+    const file = req.files.video;
+    // Validate video MIME type
+    const allowedVideoTypes = ["video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/x-msvideo", "video/x-matroska"];
+    if (!allowedVideoTypes.includes(file.mimetype)) {
+      return res.status(400).json({ error: "Invalid file type. Only MP4, WebM, MOV, AVI, MKV videos are allowed." });
+    }
+    const r = await uploadToCloudinary(file, "movies/videos", "video");
     res.json({ url: r.secure_url, publicId: r.public_id, duration: r.duration });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -626,54 +723,53 @@ app.get("/api/user/favorites", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN AUTH
+// ADMIN AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const adminSchema = new mongoose.Schema({
-  username : { type: String, required: true, unique: true, trim: true, minlength: 3 },
-  password : { type: String, required: true, minlength: 6 },
-}, { timestamps: true });
-
-adminSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
-
-const Admin = mongoose.model("Admin", adminSchema);
-const JWT_SECRET = process.env.JWT_SECRET || "mw_admin_secret_2024";
-
-// Middleware: verify admin JWT
-const requireAdmin = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    req.admin = jwt.verify(auth.slice(7), JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
-  }
-};
-
 // POST /api/admin/register
-app.post("/api/admin/register", async (req, res) => {
+// Protected: requires ADMIN_REGISTER_SECRET header AND no existing admins (first-time setup),
+// OR an existing valid admin token (to add more admins later).
+app.post("/api/admin/register", authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password)
       return res.status(400).json({ error: "Username and password required" });
-    if (password.length < 6)
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (password.length < 8)
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+
+    const adminCount = await Admin.countDocuments();
+
+    if (adminCount === 0) {
+      // First-time setup: require the ADMIN_REGISTER_SECRET
+      const secret = req.headers["x-admin-secret"] || req.body.adminSecret;
+      if (!process.env.ADMIN_REGISTER_SECRET || secret !== process.env.ADMIN_REGISTER_SECRET) {
+        return res.status(403).json({ error: "Forbidden: invalid admin registration secret" });
+      }
+    } else {
+      // Subsequent registrations: require an existing admin JWT
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith("Bearer ")) {
+        return res.status(403).json({ error: "Forbidden: admin token required to add new admins" });
+      }
+      try {
+        jwt.verify(auth.slice(7), JWT_SECRET);
+      } catch {
+        return res.status(403).json({ error: "Forbidden: invalid or expired admin token" });
+      }
+    }
+
     const exists = await Admin.findOne({ username: username.trim() });
     if (exists) return res.status(409).json({ error: "Username already taken" });
+
     const admin = new Admin({ username: username.trim(), password });
     await admin.save();
-    const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: admin._id, username: admin.username, role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
     res.status(201).json({ token, username: admin.username });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/admin/login
-app.post("/api/admin/login", async (req, res) => {
+// POST /api/admin/login — rate limited to prevent brute force
+app.post("/api/admin/login", authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password)
@@ -682,14 +778,69 @@ app.post("/api/admin/login", async (req, res) => {
     if (!admin) return res.status(401).json({ error: "Invalid credentials" });
     const match = await bcrypt.compare(password, admin.password);
     if (!match) return res.status(401).json({ error: "Invalid credentials" });
-    const token = jwt.sign({ id: admin._id, username: admin.username }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: admin._id, username: admin.username, role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
     res.json({ token, username: admin.username });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// GET /api/admin/me — verify token
+// GET /api/admin/me — verify token and return admin info
 app.get("/api/admin/me", requireAdmin, (req, res) => {
-  res.json({ username: req.admin.username });
+  res.json({ username: req.admin.username, role: req.admin.role || "admin" });
+});
+
+// GET /api/admin/profile — get current admin's full profile
+app.get("/api/admin/profile", requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id).select("-password");
+    if (!admin) return res.status(404).json({ error: "Admin not found" });
+    res.json({ id: admin._id, username: admin.username, createdAt: admin.createdAt });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PUT /api/admin/profile — update username and/or password
+app.put("/api/admin/profile", requireAdmin, async (req, res) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin) return res.status(404).json({ error: "Admin not found" });
+
+    // ── Username change ───────────────────────────────────────────────────────
+    if (username && username.trim() !== admin.username) {
+      if (username.trim().length < 3) {
+        return res.status(400).json({ error: "Username must be at least 3 characters" });
+      }
+      const taken = await Admin.findOne({ username: username.trim(), _id: { $ne: admin._id } });
+      if (taken) return res.status(409).json({ error: "Username already taken" });
+      admin.username = username.trim();
+    }
+
+    // ── Password change ───────────────────────────────────────────────────────
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: "Current password is required to set a new password" });
+      }
+      const match = await bcrypt.compare(currentPassword, admin.password);
+      if (!match) return res.status(401).json({ error: "Current password is incorrect" });
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "New password must be at least 8 characters" });
+      }
+      if (newPassword === currentPassword) {
+        return res.status(400).json({ error: "New password must be different from current password" });
+      }
+      admin.password = newPassword; // pre-save hook will hash it
+    }
+
+    await admin.save();
+
+    // Issue a fresh token with the (possibly updated) username
+    const token = jwt.sign(
+      { id: admin._id, username: admin.username, role: "admin" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ message: "Profile updated successfully", username: admin.username, token });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

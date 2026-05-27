@@ -166,12 +166,12 @@ const AdminMovieCard = ({ movie, index }) => {
           >
             <Play size={16} className="text-white ml-0.5" fill="white" />
           </Link>
-          {/* Edit in admin */}
+          {/* View detail in admin */}
           <Link
-            to="/admin/movies"
+            to={`/admin/movies/${movie._id}`}
             className="p-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full
                        shadow-xl transition-all hover:scale-110"
-            title="Manage movies"
+            title="View movie details"
           >
             <ExternalLink size={14} className="text-white" />
           </Link>

@@ -6,11 +6,13 @@ import { Search, X, ChevronDown, Film, User } from "lucide-react";
 import MovieCard    from "../components/MovieCard";
 import SkeletonCard from "../components/SkeletonCard";
 import Footer       from "../components/Footer";
+import { useTheme } from "../context/ThemeContext";
 
 const API       = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 const PAGE_SIZE = 20;
 
 const ExplorePage = () => {
+  const { dark } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ── Filter state (synced with URL) ─────────────────────────────────────────
@@ -20,6 +22,7 @@ const ExplorePage = () => {
   const [activeTranslator, setActiveTranslator] = useState(searchParams.get("translator") || "");
   const [translatorSearch, setTranslatorSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [showTranslators, setShowTranslators] = useState(false);
 
   // ── Data state ─────────────────────────────────────────────────────────────
   const [movies,      setMovies]      = useState([]);
@@ -33,12 +36,7 @@ const ExplorePage = () => {
   const [years,       setYears]       = useState([]);
   const [translators, setTranslators] = useState([]);
 
-  // ── Dropdown state ─────────────────────────────────────────────────────────
-  const [showMoreGenres,   setShowMoreGenres]   = useState(false);
-  const [showTranslators,  setShowTranslators]  = useState(false);
-
   const debounceRef      = useRef(null);
-  const moreGenresRef    = useRef(null);
   const translatorRef    = useRef(null);
 
   // ── Fetch filter options on mount ──────────────────────────────────────────
@@ -61,7 +59,7 @@ const ExplorePage = () => {
     fetchFilters();
   }, []);
 
-  // ── Sync URL → state on external navigation (e.g. navbar search) ──────────
+  // ── Sync URL → state on external navigation ────────────────────────────────
   useEffect(() => {
     setSearch(searchParams.get("search")     || "");
     setActiveGenre(searchParams.get("genre") || "All");
@@ -73,8 +71,6 @@ const ExplorePage = () => {
   // ── Close dropdowns on outside click ──────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      if (moreGenresRef.current && !moreGenresRef.current.contains(e.target))
-        setShowMoreGenres(false);
       if (translatorRef.current && !translatorRef.current.contains(e.target))
         setShowTranslators(false);
     };
@@ -141,121 +137,104 @@ const ExplorePage = () => {
 
   const hasActiveFilters = search || activeGenre !== "All" || activeYear || activeTranslator;
 
-  const primaryGenres = ["All", ...genres.slice(0, 6)];
-  const moreGenres    = genres.slice(6);
-
-  // Filtered translator list for the search-inside-dropdown
   const filteredTranslators = translators.filter((t) =>
     t.toLowerCase().includes(translatorSearch.toLowerCase())
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-
-      {/* ── Sticky filter bar ── */}
-      <div className="sticky top-16 z-30 bg-gray-950/95 backdrop-blur-xl border-b border-white/5 shadow-xl">
+    <div className={`min-h-screen ${dark ? "bg-gray-950" : "bg-gray-50"}`}>
+      {/* ── Sticky filter bar with theme support ── */}
+      <div className={`sticky top-16 z-30 backdrop-blur-xl border-b shadow-xl transition-all duration-300 ${
+        dark 
+          ? "bg-gray-950/95 border-white/5" 
+          : "bg-white/95 border-gray-200 shadow-gray-200"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 space-y-3">
 
           {/* Search */}
           <div className="relative">
-            <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search size={17} className={`absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none ${
+              dark ? "text-gray-400" : "text-gray-500"
+            }`} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title or description…"
-              className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500
-                         rounded-xl pl-11 pr-10 py-3 text-sm focus:outline-none
-                         focus:ring-2 focus:ring-red-500/50 transition-all"
+              className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm focus:outline-none
+                         focus:ring-2 focus:ring-red-500/50 transition-all ${
+                dark
+                  ? "bg-white/5 border border-white/10 text-white placeholder-gray-500"
+                  : "bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400"
+              }`}
             />
             {search && (
               <button onClick={() => setSearch("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${
+                  dark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-900"
+                }`}>
                 <X size={15} />
               </button>
             )}
           </div>
 
-          {/* Filter pills row */}
-          <div className="flex items-center gap-2 flex-wrap">
-
-            {/* Genre pills */}
-            <div className="flex items-center gap-1.5 flex-wrap flex-1">
-              {primaryGenres.map((g) => (
-                <button key={g} onClick={() => setActiveGenre(g)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                    activeGenre === g
-                      ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10"
-                  }`}>
-                  {g}
-                </button>
-              ))}
-
-              {/* More genres */}
-              {moreGenres.length > 0 && (
-                <div className="relative" ref={moreGenresRef}>
-                  <button onClick={() => setShowMoreGenres(!showMoreGenres)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium
-                                transition-all border ${
-                      moreGenres.includes(activeGenre)
-                        ? "bg-red-600 text-white border-red-600"
-                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border-white/10"
-                    }`}>
-                    {moreGenres.includes(activeGenre) ? activeGenre : "More"}
-                    <ChevronDown size={12} className={`transition-transform ${showMoreGenres ? "rotate-180" : ""}`} />
-                  </button>
-                  <AnimatePresence>
-                    {showMoreGenres && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-1 w-40 bg-gray-900 border border-white/10
-                                   rounded-xl shadow-2xl overflow-hidden z-50 max-h-52 overflow-y-auto"
-                      >
-                        {moreGenres.map((g) => (
-                          <button key={g}
-                            onClick={() => { setActiveGenre(g); setShowMoreGenres(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${
-                              activeGenre === g
-                                ? "bg-red-600/20 text-red-400"
-                                : "text-gray-300 hover:bg-white/10 hover:text-white"
-                            }`}>
-                            {g}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+          {/* Filter controls - Responsive grid layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2">
+            
+            {/* Genre Select - Always visible, full width on mobile */}
+            <div className="flex-1 min-w-[140px]">
+              <select
+                value={activeGenre}
+                onChange={(e) => setActiveGenre(e.target.value)}
+                className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none
+                           focus:ring-2 focus:ring-red-500/50 cursor-pointer transition-all ${
+                  dark
+                    ? "bg-white/5 border border-white/10 text-gray-300"
+                    : "bg-gray-100 border border-gray-200 text-gray-700"
+                }`}
+              >
+                <option value="All">All Genres</option>
+                {genres.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
             </div>
 
-            {/* Year select */}
-            <select value={activeYear} onChange={(e) => setActiveYear(e.target.value)}
-              className="bg-white/5 border border-white/10 text-gray-300 rounded-lg px-3 py-1.5
-                         text-xs focus:outline-none focus:ring-2 focus:ring-red-500/50 cursor-pointer">
-              <option value="">All Years</option>
-              {years.map((y) => <option key={y} value={y}>{y}</option>)}
-            </select>
+            {/* Year Select */}
+            <div className="flex-1 min-w-[120px]">
+              <select
+                value={activeYear}
+                onChange={(e) => setActiveYear(e.target.value)}
+                className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none
+                           focus:ring-2 focus:ring-red-500/50 cursor-pointer transition-all ${
+                  dark
+                    ? "bg-white/5 border border-white/10 text-gray-300"
+                    : "bg-gray-100 border border-gray-200 text-gray-700"
+                }`}
+              >
+                <option value="">All Years</option>
+                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
 
-            {/* Translator filter */}
-            <div className="relative" ref={translatorRef}>
+            {/* Translator Select with dropdown */}
+            <div className="relative flex-1 min-w-[150px]" ref={translatorRef}>
               <button
                 onClick={() => setShowTranslators(!showTranslators)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                className={`w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg text-sm
                             transition-all border ${
                   activeTranslator
                     ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
+                    : dark
+                      ? "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                      : "bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                <User size={12} />
-                {activeTranslator || "Translator"}
-                <ChevronDown size={11} className={`transition-transform ${showTranslators ? "rotate-180" : ""}`} />
+                <span className="flex items-center gap-1.5">
+                  <User size={14} />
+                  {activeTranslator || "Translator"}
+                </span>
+                <ChevronDown size={14} className={`transition-transform ${showTranslators ? "rotate-180" : ""}`} />
               </button>
 
               <AnimatePresence>
@@ -265,27 +244,35 @@ const ExplorePage = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-1 w-52 bg-gray-900 border border-white/10
-                               rounded-xl shadow-2xl overflow-hidden z-50"
+                    className={`absolute top-full left-0 right-0 mt-1 border rounded-xl shadow-2xl 
+                               overflow-hidden z-50 ${
+                      dark 
+                        ? "bg-gray-900 border-white/10" 
+                        : "bg-white border-gray-200"
+                    }`}
                   >
                     {/* Search inside dropdown */}
-                    <div className="p-2 border-b border-white/10">
+                    <div className={`p-2 border-b ${dark ? "border-white/10" : "border-gray-200"}`}>
                       <div className="relative">
-                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                        <Search size={12} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${
+                          dark ? "text-gray-500" : "text-gray-400"
+                        }`} />
                         <input
                           type="text"
                           value={translatorSearch}
                           onChange={(e) => setTranslatorSearch(e.target.value)}
                           placeholder="Search translator…"
-                          className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500
-                                     rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none
-                                     focus:ring-1 focus:ring-blue-500/50"
+                          className={`w-full rounded-lg pl-7 pr-3 py-1.5 text-xs focus:outline-none
+                                     focus:ring-1 focus:ring-blue-500/50 ${
+                            dark
+                              ? "bg-white/5 border border-white/10 text-white placeholder-gray-500"
+                              : "bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400"
+                          }`}
                         />
                       </div>
                     </div>
 
                     <div className="max-h-48 overflow-y-auto">
-                      {/* Clear option */}
                       {activeTranslator && (
                         <button
                           onClick={() => { setActiveTranslator(""); setTranslatorSearch(""); setShowTranslators(false); }}
@@ -297,7 +284,9 @@ const ExplorePage = () => {
                       )}
 
                       {filteredTranslators.length === 0 ? (
-                        <p className="px-4 py-4 text-xs text-gray-500 text-center">
+                        <p className={`px-4 py-4 text-xs text-center ${
+                          dark ? "text-gray-500" : "text-gray-400"
+                        }`}>
                           {translatorSearch ? `No match for "${translatorSearch}"` : "No translators in DB yet"}
                         </p>
                       ) : (
@@ -311,8 +300,12 @@ const ExplorePage = () => {
                             className={`w-full text-left px-4 py-2.5 text-xs transition-colors
                                         flex items-center gap-2 ${
                               activeTranslator === t
-                                ? "bg-blue-600/20 text-blue-400"
-                                : "text-gray-300 hover:bg-white/10 hover:text-white"
+                                ? dark
+                                  ? "bg-blue-600/20 text-blue-400"
+                                  : "bg-blue-100 text-blue-600"
+                                : dark
+                                  ? "text-gray-300 hover:bg-white/10 hover:text-white"
+                                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                             }`}
                           >
                             <User size={10} />
@@ -326,21 +319,24 @@ const ExplorePage = () => {
               </AnimatePresence>
             </div>
 
-            {/* Clear all */}
+            {/* Clear all button */}
             {hasActiveFilters && (
               <button onClick={clearFilters}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-red-400
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm text-red-400
                            hover:text-red-300 bg-red-600/10 hover:bg-red-600/20
-                           border border-red-500/20 transition-all">
-                <X size={12} /> Clear all
+                           border border-red-500/20 transition-all whitespace-nowrap"
+              >
+                <X size={14} /> Clear
               </button>
             )}
           </div>
 
           {/* Active translator badge */}
           {activeTranslator && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500 text-xs">Showing movies translated by:</span>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`text-xs ${dark ? "text-gray-500" : "text-gray-400"}`}>
+                Showing movies translated by:
+              </span>
               <span className="flex items-center gap-1.5 bg-blue-600/15 border border-blue-500/30
                                text-blue-400 text-xs px-2.5 py-1 rounded-full font-medium">
                 <User size={10} />
@@ -359,17 +355,19 @@ const ExplorePage = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {!loading && (
           <div className="mb-6">
-            <p className="text-gray-400 text-sm">
+            <p className={`text-sm ${dark ? "text-gray-400" : "text-gray-600"}`}>
               {total > 0 ? (
                 <>
-                  <span className="text-white font-semibold">{total}</span>{" "}
+                  <span className={`font-semibold ${dark ? "text-white" : "text-gray-900"}`}>
+                    {total}
+                  </span>{" "}
                   movie{total !== 1 ? "s" : ""} found
                   {hasActiveFilters && (
-                    <span className="text-gray-500">
-                      {activeGenre !== "All" && ` in ${activeGenre}`}
-                      {activeYear       && ` · ${activeYear}`}
+                    <span className={`text-xs ml-2 ${dark ? "text-gray-500" : "text-gray-400"}`}>
+                      {activeGenre !== "All" && `in ${activeGenre}`}
+                      {activeYear && ` · ${activeYear}`}
                       {activeTranslator && ` · by ${activeTranslator}`}
-                      {search           && ` · "${search}"`}
+                      {search && ` · "${search}"`}
                     </span>
                   )}
                 </>
@@ -388,6 +386,7 @@ const ExplorePage = () => {
             genre={activeGenre}
             translator={activeTranslator}
             onClear={clearFilters}
+            dark={dark}
           />
         ) : (
           <>
@@ -400,11 +399,16 @@ const ExplorePage = () => {
             {page < totalPages && (
               <div className="flex justify-center mt-10">
                 <button onClick={handleLoadMore} disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10
-                             border border-white/10 text-white rounded-xl font-medium
-                             transition-all disabled:opacity-50">
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-medium
+                             transition-all disabled:opacity-50 ${
+                    dark
+                      ? "bg-white/5 hover:bg-white/10 border border-white/10 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900"
+                  }`}>
                   {loadingMore && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${
+                      dark ? "border-white" : "border-gray-900"
+                    }`} />
                   )}
                   {loadingMore ? "Loading…" : `Load more (${total - movies.length} remaining)`}
                 </button>
@@ -419,18 +423,22 @@ const ExplorePage = () => {
   );
 };
 
-// ── Empty state ────────────────────────────────────────────────────────────────
-const EmptyState = ({ search, genre, translator, onClear }) => (
+// ── Empty state with theme support ────────────────────────────────────────────
+const EmptyState = ({ search, genre, translator, onClear, dark }) => (
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
     className="flex flex-col items-center justify-center py-24 text-center">
-    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${
+      dark ? "bg-white/5" : "bg-gray-100"
+    }`}>
       {translator
-        ? <User size={32} className="text-gray-500" />
-        : <Film size={32} className="text-gray-500" />
+        ? <User size={32} className={dark ? "text-gray-500" : "text-gray-400"} />
+        : <Film size={32} className={dark ? "text-gray-500" : "text-gray-400"} />
       }
     </div>
-    <h3 className="text-xl font-bold text-white mb-2">No movies found</h3>
-    <p className="text-gray-400 text-sm max-w-sm mb-6">
+    <h3 className={`text-xl font-bold mb-2 ${dark ? "text-white" : "text-gray-900"}`}>
+      No movies found
+    </h3>
+    <p className={`text-sm max-w-sm mb-6 ${dark ? "text-gray-400" : "text-gray-600"}`}>
       {translator
         ? `No movies translated by "${translator}" yet.`
         : search
