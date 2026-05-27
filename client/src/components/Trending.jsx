@@ -125,10 +125,6 @@ const Trending = () => {
                   <span className="text-yellow-400 font-bold">{avgRating}</span>
                 </div>
                 {active.year     && <span className="text-gray-300">{active.year}</span>}
-                {active.duration && <span className="text-gray-300">{active.duration}</span>}
-                {active.views > 0 && (
-                  <span className="text-gray-400">{active.views.toLocaleString()} views</span>
-                )}
               </div>
 
               <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8
