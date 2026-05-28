@@ -152,15 +152,6 @@ const MovieWatch = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Back */}
-      <div className="fixed top-4 left-4 z-40">
-        <button onClick={() => navigate(-1)}
-          className="flex items-center gap-2 bg-black/70 backdrop-blur-sm border border-white/10
-                     text-white px-4 py-2 rounded-xl hover:bg-black/90 transition-all text-sm font-medium">
-          <ArrowLeft size={16} /> Back
-        </button>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-20 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

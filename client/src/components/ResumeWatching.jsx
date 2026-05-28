@@ -1,35 +1,34 @@
 // src/components/ResumeWatching.jsx
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Play, RotateCcw, ChevronRight, ChevronLeft, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, RotateCcw, Clock, ChevronRight, ChevronLeft } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useTheme } from "../context/ThemeContext";
 
 const ResumeWatching = () => {
   const { watchHistory, saveWatchProgress } = useApp();
-  const navigate  = useNavigate();
+  const { dark } = useTheme();
+  const navigate = useNavigate();
   const scrollRef = useRef(null);
 
-  // Only show entries that have meaningful progress (1–98%)
   const inProgress = watchHistory.filter(
     (m) => m.progress > 0 && m.progress < 99
   );
 
   if (inProgress.length === 0) return null;
 
-  // ── Scroll helpers ──────────────────────────────────────────────────────────
-  const scroll = (dir) => {
+  const scroll = (direction) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+    const scrollAmount = direction * 400;
+    el.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
-  // ── Resume: go to watch page (WatchPage reads saved progress automatically) ─
   const handleResume = (movie) => {
     navigate(`/watch/${movie._id}`);
   };
 
-  // ── Restart: zero out progress then navigate ────────────────────────────────
   const handleRestart = (e, movie) => {
     e.stopPropagation();
     saveWatchProgress(movie, 0);
@@ -37,148 +36,206 @@ const ResumeWatching = () => {
   };
 
   return (
-    <section className="px-4 md:px-8 lg:px-12 py-8">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-5">
+    <section className={`px-4 md:px-8 py-6 transition-colors duration-300 ${
+      dark ? 'bg-transparent' : 'bg-gray-50'
+    }`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <Clock size={18} className="text-red-500" />
-          <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">
+          <h2 className={`text-lg font-semibold transition-colors duration-300 ${
+            dark ? 'text-white' : 'text-gray-900'
+          }`}>
             Resume Watching
           </h2>
-          <span className="text-xs text-gray-500 font-normal mt-0.5">
-            ({inProgress.length})
+          <span className={`text-xs px-2 py-0.5 rounded-full transition-colors duration-300 ${
+            dark 
+              ? 'text-gray-500 bg-gray-800/50' 
+              : 'text-white bg-red-500'
+          }`}>
+            {inProgress.length}
           </span>
         </div>
 
-        {/* Scroll arrows — only useful when there are enough cards */}
-        {inProgress.length > 3 && (
-          <div className="flex items-center gap-1">
+        {inProgress.length > 2 && (
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => scroll(-1)}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10
-                         text-gray-400 hover:text-white transition-all"
+              className={`p-1.5 rounded-md transition-all duration-300 ${
+                dark
+                  ? 'bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white'
+                  : 'bg-gray-200/50 hover:bg-gray-300 text-gray-600 hover:text-gray-900'
+              }`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
             </button>
             <button
               onClick={() => scroll(1)}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10
-                         text-gray-400 hover:text-white transition-all"
+              className={`p-1.5 rounded-md transition-all duration-300 ${
+                dark
+                  ? 'bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white'
+                  : 'bg-gray-200/50 hover:bg-gray-300 text-gray-600 hover:text-gray-900'
+              }`}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={18} />
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Scrollable card row ── */}
+      {/* Horizontal Scroll - Rectangular Bars */}
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none"
-        style={{ scrollbarWidth: "none" }}
+        className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {inProgress.map((movie, i) => (
-          <ResumeCard
-            key={movie._id}
-            movie={movie}
-            index={i}
-            onResume={handleResume}
-            onRestart={handleRestart}
-          />
-        ))}
+        <AnimatePresence>
+          {inProgress.map((movie, index) => (
+            <RectangularBar
+              key={movie._id}
+              movie={movie}
+              index={index}
+              onResume={handleResume}
+              onRestart={handleRestart}
+              dark={dark}
+            />
+          ))}
+        </AnimatePresence>
       </div>
     </section>
   );
 };
 
-// ── Individual card ───────────────────────────────────────────────────────────
-const ResumeCard = ({ movie, index, onResume, onRestart }) => {
+// Rectangular Bar Component
+const RectangularBar = ({ movie, index, onResume, onRestart, dark }) => {
   const poster = movie.posterUrls?.[0] || movie.image;
-  const pct    = Math.min(Math.round(movie.progress || 0), 100);
+  const progress = Math.min(Math.round(movie.progress || 0), 100);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3 }}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.03, duration: 0.25 }}
       onClick={() => onResume(movie)}
-      className="group relative flex w-44 bg-gray-500/20 border-l-3 rounded-xl cursor-pointer gap-2 md:mr-4"
+      className={`group relative flex-shrink-0 w-80 md:w-96
+                 rounded-lg cursor-pointer transition-all duration-300 overflow-hidden
+                 ${dark 
+                    ? 'bg-gradient-to-r from-gray-900/80 to-gray-800/50 hover:from-gray-800/90 hover:to-gray-700/60 border border-gray-700/50 hover:border-red-500/40' 
+                    : 'bg-white hover:bg-gray-50 border border-gray-200 hover:border-red-300 shadow-sm hover:shadow-md'
+                 }`}
     >
-      {/* ── Poster ── */}
-      <div className="relative w-full aspect-[5/3] rounded-xl overflow-hidden
-                      border border-white/10 group-hover:border-red-500/50
-                      transition-all duration-300 shadow-lg shadow-black/40">
-
-        {/* Image */}
-        {poster ? (
-          <img
-            src={poster}
-            alt={movie.title}
-            className="w-full h-full object-cover group-hover:scale-105
-                       transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-            <Clock size={28} className="text-gray-600" />
+      {/* Content Container */}
+      <div className="flex items-center p-2.5 gap-3">
+        {/* Small Thumbnail */}
+        <div className="relative flex-shrink-0">
+          <div className={`w-14 h-20 rounded-md overflow-hidden shadow-md transition-all duration-300 ${
+            dark ? 'bg-gray-800' : 'bg-gray-100'
+          }`}>
+            {poster ? (
+              <img
+                src={poster}
+                alt={movie.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Clock size={20} className={dark ? 'text-gray-600' : 'text-gray-400'} />
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Dark overlay on hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50
-                        transition-all duration-300" />
+        {/* Info Section */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className={`text-sm font-semibold truncate transition-colors duration-300
+                           group-hover:text-red-500 ${
+                             dark ? 'text-white' : 'text-gray-900'
+                           }`}>
+              {movie.title}
+            </h3>
+            <span className={`text-xs font-medium flex-shrink-0 transition-colors duration-300 ${
+              dark ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              {progress}%
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-1">
+            {movie.year && (
+              <span className={`text-xs transition-colors duration-300 ${
+                dark ? 'text-gray-500' : 'text-gray-500'
+              }`}>
+                {movie.year}
+              </span>
+            )}
+            {movie.genre && (
+              <>
+                <span className={`text-xs transition-colors duration-300 ${
+                  dark ? 'text-gray-600' : 'text-gray-400'
+                }`}>•</span>
+                <span className={`text-xs truncate transition-colors duration-300 ${
+                  dark ? 'text-gray-500' : 'text-gray-500'
+                }`}>
+                  {movie.genre}
+                </span>
+              </>
+            )}
+          </div>
 
-        {/* ── Hover action buttons ── */}
-        <div className="absolute inset-0 flex items-center justify-center gap-3
-                        opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          {/* Resume */}
+          {/* Progress Bar */}
+          <div className="mt-2">
+            <div className={`h-1.5 rounded-full overflow-hidden transition-colors duration-300 ${
+              dark ? 'bg-gray-700' : 'bg-gray-200'
+            }`}>
+              <div
+                className="h-full bg-red-500 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Time Info */}
+          {movie.duration && (
+            <p className={`text-xs mt-1.5 transition-colors duration-300 ${
+              dark ? 'text-gray-600' : 'text-gray-500'
+            }`}>
+              {Math.floor((movie.duration * (100 - progress)) / 100)} minutes remaining
+            </p>
+          )}
+        </div>
+
+        {/* Action Buttons - Appear on hover */}
+        <div className={`absolute inset-0 backdrop-blur-sm
+                        flex items-center justify-center gap-3
+                        opacity-0 group-hover:opacity-100
+                        transition-all duration-200 ${
+                          dark ? 'bg-black/60' : 'bg-white/80'
+                        }`}>
           <button
             onClick={(e) => { e.stopPropagation(); onResume(movie); }}
-            title="Resume"
-            className="w-10 h-10 bg-red-600 hover:bg-red-500 rounded-full
-                       flex items-center justify-center shadow-xl
-                       transition-all scale-90 group-hover:scale-100"
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-500 
+                       rounded-md text-xs font-semibold text-white
+                       flex items-center gap-1.5 transition-all transform hover:scale-105
+                       shadow-md"
           >
-            <Play size={16} fill="white" className="text-white ml-0.5" />
+            <Play size={14} fill="white" />
+            Resume
           </button>
-
-          {/* Restart */}
           <button
             onClick={(e) => onRestart(e, movie)}
-            title="Restart from beginning"
-            className="w-9 h-9 bg-white/15 hover:bg-white/25 rounded-full
-                       flex items-center justify-center shadow-xl backdrop-blur-sm
-                       transition-all scale-90 group-hover:scale-100 border border-white/20"
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold
+                       flex items-center gap-1.5 transition-all transform hover:scale-105
+                       shadow-md ${
+                         dark 
+                           ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                           : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                       }`}
           >
-            <RotateCcw size={14} className="text-white" />
+            <RotateCcw size={14} />
+            Restart
           </button>
-        </div>
-
-        
-      </div>
-
-      {/* ── Info below poster ── */}
-      <div className="mt-2 px-0.5 space-y-1.5 w-full">
-        <p className="text-white text-xs font-semibold truncate leading-snug
-                      group-hover:text-red-400 transition-colors">
-          {movie.title}
-        </p>
-        <div className="flex items-center justify-between mt-0.5">
-          {movie.year && (
-            <span className="text-gray-500 text-xs">{movie.year}</span>
-          )}
-          <span className="text-gray-400 text-xs font-medium ml-2">
-            {pct}%
-          </span>
-        </div>
-        {/* ── Progress bar (bottom of poster) ── */}
-        <div className=" left-0 right-0">
-          {/* Track */}
-          <div className="h-1 bg-black/50">
-            <div
-              className="h-full bg-red-500 transition-all duration-300"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
         </div>
       </div>
     </motion.div>
