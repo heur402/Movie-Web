@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Heart, Clock, X, ChevronDown, Film, Menu, Sun, Moon } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
@@ -15,6 +16,7 @@ const GENRES = [
 ];
 
 const Navbar = () => {
+  const { t, i18n } = useTranslation();
   // ── ALL hooks must come before any conditional return ──────────────────────
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -183,10 +185,10 @@ const Navbar = () => {
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled
           ? dark
-            ? "bg-black/95 backdrop-blur-xl shadow-2xl shadow-black/50"
+            ? " backdrop-blur-xl shadow-2xl shadow-black/50"
             : "bg-white/95 backdrop-blur-xl shadow-2xl shadow-gray-200"
           : dark
-          ? "bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm"
+          ? " backdrop-blur-sm"
           : "bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm"
       }`}
     >
@@ -202,13 +204,12 @@ const Navbar = () => {
             dark ? "text-white" : "text-gray-900"
           }`}>
             Movie<span className="text-red-500">Web</span>
-          </span>
-        </Link>
+          </span>        </Link>
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-1">
-          <NavLink to="/" dark={dark}>Home</NavLink>
-          <NavLink to="/explore" dark={dark}>Explore</NavLink>
+          <NavLink to="/" dark={dark}>{t("nav.home")}</NavLink>
+          <NavLink to="/explore" dark={dark}>{t("nav.explore")}</NavLink>
 
           {/* Genres dropdown */}
           <div className="relative" ref={genreRef}>
@@ -221,7 +222,7 @@ const Navbar = () => {
               aria-expanded={showGenres}
               aria-haspopup="menu"
             >
-              Genres
+              {t("nav.genres")}
               <ChevronDown size={14} className={`transition-transform ${showGenres ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
@@ -270,7 +271,7 @@ const Navbar = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSearch(true)}
-              placeholder="Search movies..."
+              placeholder={t("search.placeholder")}
               className={`w-full border rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2
                          focus:ring-red-500/50 transition-all ${
                            dark
@@ -310,7 +311,7 @@ const Navbar = () => {
                     <div className="px-4 py-8 text-center">
                       <div className="inline-block w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                       <p className={`mt-2 text-sm ${dark ? "text-gray-400" : "text-gray-600"}`}>
-                        Searching...
+                        {t("search.searching")}
                       </p>
                     </div>
                   ) : (
@@ -349,7 +350,7 @@ const Navbar = () => {
                                      dark ? "hover:bg-white/5 border-gray-700/50" : "hover:bg-gray-50 border-gray-200"
                                    }`}
                       >
-                        See all results for "{searchQuery}"
+                        {t("search.see_all_results", { query: searchQuery })}
                       </button>
                     </>
                   )}
@@ -368,7 +369,7 @@ const Navbar = () => {
               className={`relative p-2 transition-colors rounded-lg hover:bg-white/10 ${
                 dark ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"
               }`}
-              aria-label="Favorites"
+              aria-label={t("nav.favorites")}
             >
               <Heart size={20} className={favorites.length > 0 ? "fill-red-500 text-red-500" : ""} />
               {favorites.length > 0 && (
@@ -397,10 +398,10 @@ const Navbar = () => {
                     dark ? "border-gray-700/50" : "border-gray-200"
                   }`}>
                     <span className={`font-semibold text-sm ${dark ? "text-white" : "text-gray-900"}`}>
-                      My Favorites
+                      {t("nav.my_favorites")}
                     </span>
                     <span className={`text-xs ${dark ? "text-gray-400" : "text-gray-600"}`}>
-                      {favorites.length} movies
+                      {t("nav.n_movies", { count: favorites.length })}
                     </span>
                   </div>
                   {favorites.length === 0 ? (
@@ -408,7 +409,7 @@ const Navbar = () => {
                       dark ? "text-gray-400" : "text-gray-600"
                     }`}>
                       <Heart size={24} className="mx-auto mb-2 opacity-40" />
-                      No favorites yet
+                      {t("nav.no_favorites_yet")}
                     </div>
                   ) : (
                     <div className="max-h-64 overflow-y-auto">
@@ -447,7 +448,7 @@ const Navbar = () => {
                       onClick={() => setShowFavorites(false)}
                       className="text-red-400 text-xs hover:text-red-300 transition-colors"
                     >
-                      View all favorites →
+                      {t("nav.view_all_favorites")}
                     </Link>
                   </div>
                 </motion.div>
@@ -461,10 +462,12 @@ const Navbar = () => {
             className={`hidden sm:flex p-2 transition-colors rounded-lg hover:bg-white/10 ${
               dark ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"
             }`}
-            aria-label="Watch History"
+            aria-label={t("nav.watch_history")}
           >
             <Clock size={20} />
           </Link>
+
+          
 
           {/* Theme toggle */}
           <button
@@ -472,11 +475,29 @@ const Navbar = () => {
             className={`p-2 transition-colors rounded-lg hover:bg-white/10 ${
               dark ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"
             }`}
-            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-            title={dark ? "Light mode" : "Dark mode"}
+            aria-label={dark ? t("nav.theme_light") : t("nav.theme_dark")}
+            title={dark ? t("nav.light_mode") : t("nav.dark_mode")}
           >
             {dark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+
+          {/* Language switcher */}
+          <select
+            value={i18n.language}
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            className={`text-xs font-medium rounded-lg px-2 py-1.5 border cursor-pointer
+                        focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all ${
+              dark
+                ? "bg-white/10 border-white/10 text-gray-300 hover:bg-white/15"
+                : "bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200"
+            }`}
+            aria-label="Select language"
+            title="Language"
+          >
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="kin">🇷🇼 KIN</option>
+          </select>
 
           {/* Mobile menu toggle */}
           <button
@@ -484,7 +505,7 @@ const Navbar = () => {
             className={`md:hidden p-2 transition-colors rounded-lg hover:bg-white/10 ${
               dark ? "text-gray-300 hover:text-white" : "text-gray-700 hover:text-gray-900"
             }`}
-            aria-label="Menu"
+            aria-label={t("nav.menu")}
             aria-expanded={showMobileMenu}
           >
             {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
@@ -514,7 +535,7 @@ const Navbar = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search movies..."
+                  placeholder={t("search.placeholder")}
                   className={`w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none
                              focus:ring-2 focus:ring-red-500/50 ${
                                dark
@@ -525,23 +546,23 @@ const Navbar = () => {
               </form>
 
               <MobileNavLink to="/" onClick={() => setShowMobileMenu(false)} dark={dark}>
-                Home
+                {t("nav.home")}
               </MobileNavLink>
               <MobileNavLink to="/explore" onClick={() => setShowMobileMenu(false)} dark={dark}>
-                Explore
+                {t("nav.explore")}
               </MobileNavLink>
               <MobileNavLink to="/favorites" onClick={() => setShowMobileMenu(false)} dark={dark}>
-                Favorites ({favorites.length})
+                {t("nav.favorites")} ({favorites.length})
               </MobileNavLink>
               <MobileNavLink to="/history" onClick={() => setShowMobileMenu(false)} dark={dark}>
-                Continue Watching
+                {t("nav.continue_watching")}
               </MobileNavLink>
 
               <div className={`pt-2 border-t ${dark ? "border-gray-800" : "border-gray-200"}`}>
                 <p className={`text-xs uppercase tracking-wider mb-2 px-2 ${
                   dark ? "text-gray-500" : "text-gray-400"
                 }`}>
-                  Genres
+                  {t("nav.genres")}
                 </p>
                 <div className="grid grid-cols-3 gap-1">
                   {GENRES.map((g) => (
@@ -555,6 +576,34 @@ const Navbar = () => {
                       }`}
                     >
                       {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile language switcher */}
+              <div className={`pt-2 border-t ${dark ? "border-gray-800" : "border-gray-200"}`}>
+                <p className={`text-xs uppercase tracking-wider mb-2 px-2 ${dark ? "text-gray-500" : "text-gray-400"}`}>
+                  Language
+                </p>
+                <div className="flex gap-2 px-1">
+                  {[
+                    { code: "en",  label: "🇬🇧 English" },
+                    { code: "fr",  label: "🇫🇷 Français" },
+                    { code: "kin", label: "🇷🇼 Kinyarwanda" },
+                  ].map(({ code, label }) => (
+                    <button
+                      key={code}
+                      onClick={() => { i18n.changeLanguage(code); setShowMobileMenu(false); }}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        i18n.language === code
+                          ? "bg-red-600 text-white"
+                          : dark
+                            ? "bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                      }`}
+                    >
+                      {label}
                     </button>
                   ))}
                 </div>

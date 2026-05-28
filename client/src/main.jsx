@@ -1,3 +1,4 @@
+import "./i18n/i18n.js"; // must be first — initialises i18next before any component renders
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";

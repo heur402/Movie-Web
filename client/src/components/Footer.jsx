@@ -1,10 +1,11 @@
 // src/components/Footer.jsx
-import React from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Film, Facebook, Instagram, Twitter, Youtube, Heart } from "lucide-react";
+import { Film, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-gray-950 border-t border-white/5 text-gray-400">
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
@@ -21,19 +22,19 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-500">
-              Stream, explore and discover your favorite movies — anytime, anywhere. Free, no subscriptions.
+              {t("common.app_tagline")}
             </p>
             <div className="flex gap-3 mt-5">
               {[
-                { icon: Facebook, label: "Facebook" },
-                { icon: Instagram, label: "Instagram" },
-                { icon: Twitter, label: "Twitter" },
-                { icon: Youtube, label: "YouTube" },
+                { icon: Facebook,  label: t("footer.social_facebook") },
+                { icon: Instagram, label: t("footer.social_instagram") },
+                { icon: Twitter,   label: t("footer.social_twitter") },
+                { icon: Youtube,   label: t("footer.social_youtube") },
               ].map(({ icon: Icon, label }) => (
                 <a
-                  key={label}
+                  
                   href="#"
-                  aria-label={label}
+                  
                   className="w-9 h-9 bg-white/5 hover:bg-red-600/20 border border-white/10 hover:border-red-500/30 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-400 transition-all"
                 >
                   <Icon size={16} />
@@ -44,19 +45,19 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Navigation</h3>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+              {t("footer.navigation_heading")}
+            </h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                { to: "/", label: "Home" },
-                { to: "/explore", label: "Explore" },
-                { to: "/favorites", label: "My Favorites" },
-                { to: "/history", label: "Continue Watching" },
-                { to: "/admin", label: "Admin" },
+                { to: "/",          label: t("footer.home") },
+                { to: "/explore",   label: t("footer.explore") },
+                { to: "/favorites", label: t("footer.my_favorites") },
+                { to: "/history",   label: t("footer.continue_watching") },
+                { to: "/admin",     label: t("footer.admin") },
               ].map(({ to, label }) => (
                 <li key={to}>
-                  <Link to={to} className="hover:text-red-400 transition-colors">
-                    {label}
-                  </Link>
+                  <Link to={to} className="hover:text-red-400 transition-colors">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -64,7 +65,9 @@ const Footer = () => {
 
           {/* Genres */}
           <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Genres</h3>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+              {t("footer.genres_heading")}
+            </h3>
             <ul className="space-y-2.5 text-sm">
               {["Action", "Drama", "Comedy", "Horror", "Romance", "Sci-Fi"].map((g) => (
                 <li key={g}>
@@ -79,19 +82,19 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Legal + Contact */}
+          {/* Company */}
           <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Company</h3>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+              {t("footer.company_heading")}
+            </h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                { to: "/about", label: "About Us" },
-                { to: "/privacy", label: "Privacy Policy" },
-                { to: "/terms", label: "Terms & Conditions" },
+                { to: "/about",   label: t("footer.about_us") },
+                { to: "/privacy", label: t("footer.privacy_policy") },
+                { to: "/terms",   label: t("footer.terms_conditions") },
               ].map(({ to, label }) => (
                 <li key={to}>
-                  <Link to={to} className="hover:text-red-400 transition-colors">
-                    {label}
-                  </Link>
+                  <Link to={to} className="hover:text-red-400 transition-colors">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -107,10 +110,8 @@ const Footer = () => {
       {/* Bottom bar */}
       <div className="border-t border-white/5 py-4">
         <div className="max-w-7xl mx-auto px-6 md:px-10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
-          <p>© {new Date().getFullYear()} MovieWeb. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Made with BonheurLabs in Rwanda
-          </p>
+          <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
+          <p>{t("footer.made_with")}</p>
         </div>
       </div>
     </footer>

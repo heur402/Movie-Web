@@ -1,14 +1,16 @@
-// src/components/MovieCategories.jsx — Genre rows with horizontal scroll
-import React, { useEffect, useState, useRef } from "react";
+// src/components/MovieCategories.jsx
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import MovieCard from "./MovieCard";
 import SkeletonCard from "./SkeletonCard";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
 const MovieCategories = () => {
+  const { t } = useTranslation();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +47,12 @@ const MovieCategories = () => {
   if (movies.length === 0) {
     return (
       <div className="px-6 py-20 text-center text-gray-400">
-        <p className="text-xl">No movies found</p>
-        <p className="text-sm mt-2">Add movies from the admin panel</p>
+        <p className="text-xl">{t("empty_states.no_movies_found")}</p>
+        <p className="text-sm mt-2">{t("home.no_movies_yet")}</p>
       </div>
     );
   }
 
-  // Group by genre
   const grouped = movies.reduce((acc, movie) => {
     const genres = movie.genre
       ? movie.genre.split(/[,/]/).map((g) => g.trim()).filter(Boolean)
@@ -73,6 +74,7 @@ const MovieCategories = () => {
 };
 
 const CategoryRow = ({ genre, movies, index }) => {
+  const { t } = useTranslation();
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -106,7 +108,6 @@ const CategoryRow = ({ genre, movies, index }) => {
       transition={{ duration: 0.5, delay: index * 0.05 }}
       className="px-6 md:px-10"
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-1 h-6 bg-red-500 rounded-full" />
@@ -118,26 +119,19 @@ const CategoryRow = ({ genre, movies, index }) => {
             to={`/explore?genre=${encodeURIComponent(genre)}`}
             className="flex items-center gap-1 text-gray-400 hover:text-red-400 text-sm transition-colors"
           >
-            See all <ArrowRight size={14} />
+            {t("common.see_all")} <ArrowRight size={14} />
           </Link>
-          <button
-            onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
+          <button onClick={() => scroll("left")} disabled={!canScrollLeft}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             <ChevronLeft size={16} />
           </button>
-          <button
-            onClick={() => scroll("right")}
-            disabled={!canScrollRight}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
+          <button onClick={() => scroll("right")} disabled={!canScrollRight}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
-      {/* Scroll container */}
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"

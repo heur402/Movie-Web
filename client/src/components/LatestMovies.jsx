@@ -1,14 +1,16 @@
-// src/components/LatestMovies.jsx — Latest releases section for homepage
-import React, { useEffect, useState, useRef } from "react";
+// src/components/LatestMovies.jsx
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import MovieCard from "./MovieCard";
 import SkeletonCard from "./SkeletonCard";
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
 const LatestMovies = () => {
+  const { t } = useTranslation();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
@@ -63,15 +65,12 @@ const LatestMovies = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-1 h-6 bg-yellow-500 rounded-full" />
-          <h2 className="text-white text-xl font-bold">Latest Releases</h2>
+          <h2 className="text-white text-xl font-bold">{t("home.latest_releases")}</h2>
           <Sparkles size={16} className="text-yellow-400" />
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            to="/explore"
-            className="flex items-center gap-1 text-gray-400 hover:text-yellow-400 text-sm transition-colors"
-          >
-            See all <ArrowRight size={14} />
+          <Link to="/explore" className="flex items-center gap-1 text-gray-400 hover:text-yellow-400 text-sm transition-colors">
+            {t("common.see_all")} <ArrowRight size={14} />
           </Link>
           <button
             onClick={() => scroll("left")}
@@ -90,18 +89,15 @@ const LatestMovies = () => {
         </div>
       </div>
 
-      {/* Scroll container */}
       {loading ? (
         <div className="flex gap-4 overflow-hidden">
           {Array(6).fill(0).map((_, i) => (
-            <div key={i} className="shrink-0 w-40 sm:w-44 md:w-48">
-              <SkeletonCard />
-            </div>
+            <div key={i} className="shrink-0 w-40 sm:w-44 md:w-48"><SkeletonCard /></div>
           ))}
         </div>
       ) : movies.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <p>No movies yet. Add some from the admin panel.</p>
+          <p>{t("home.no_movies_yet")}</p>
         </div>
       ) : (
         <div
