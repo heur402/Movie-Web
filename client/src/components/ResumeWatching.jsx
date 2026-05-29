@@ -124,11 +124,7 @@ const RectangularBar = ({ movie, index, onResume, onRestart, dark, t }) => {
             </div>
           </div>
 
-          {movie.duration && (
-            <p className={`text-xs mt-1.5 ${dark ? "text-gray-600" : "text-gray-500"}`}>
-              {t("history.minutes_remaining", { minutes: Math.floor((movie.duration * (100 - progress)) / 100) })}
-            </p>
-          )}
+
         </div>
 
         {/* Hover actions */}

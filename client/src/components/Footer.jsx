@@ -99,9 +99,9 @@ const Footer = () => {
               ))}
             </ul>
             <div className="mt-5 text-sm space-y-1">
-              <p>📧 byirngiro@gmail.com</p>
-              <p>📞 +250 796 577 776</p>
-              <p>📍 Kigali, Rwanda</p>
+              <p>byirngirobon01fra@gmail.com</p>
+              <p>+250 796 577 776</p>
+              <p>Kigali, Rwanda</p>
             </div>
           </div>
         </div>
