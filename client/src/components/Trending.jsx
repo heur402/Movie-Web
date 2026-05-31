@@ -6,6 +6,7 @@ import { Play, Heart, Star, Info, TrendingUp, Clock } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation } from "react-i18next";
+import TrendingSkeleton from "./TrendingSkeleton"; // Import the skeleton
 
 const API = import.meta.env.VITE_API_NEW || "http://localhost:5000";
 
@@ -45,22 +46,12 @@ const Trending = () => {
 
   const active = movies[activeIdx];
 
+  // Use skeleton while loading
   if (loading) {
-    return (
-      <div className={`relative h-[90vh] flex items-center justify-center ${dark ? "bg-black" : "bg-white"}`}>
-        <div className="text-center space-y-4">
-          <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 border-2 border-red-600/20 rounded-full" />
-            <div className="absolute inset-0 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className={`text-xs tracking-[0.2em] uppercase font-medium ${dark ? "text-gray-600" : "text-gray-400"}`}>
-            {t("common.curating")}
-          </p>
-        </div>
-      </div>
-    );
+    return <TrendingSkeleton />;
   }
 
+  // Rest of your component remains the same...
   if (!active || movies.length === 0) {
     return (
       <div className={`relative h-[70vh] flex items-center justify-center ${dark ? "bg-black" : "bg-white"}`}>
@@ -77,6 +68,7 @@ const Trending = () => {
     );
   }
 
+  // Rest of your component JSX...
   const bgImage = active.backdropUrl || active.posterUrls?.[0] || active.image;
   const avgRating = active.avgRating ||
     (active.ratings?.length > 0
